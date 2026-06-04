@@ -33,7 +33,7 @@ export default function AppLayout() {
   const t = useT();
   return (
     <div className="flex h-full">
-      <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+      <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
         <div className="px-4 py-4">
           <div className="text-sm font-bold text-brand-700 dark:text-brand-300">AI Execution OS</div>
           <div className="text-[11px] text-slate-400 dark:text-slate-500">OKR · Critical 6 · CFR · KPI</div>
@@ -74,7 +74,7 @@ export default function AppLayout() {
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-6xl p-6">
+        <div className="mx-auto w-full max-w-[1760px] px-8 py-8 2xl:px-12">
           <Outlet />
         </div>
       </main>

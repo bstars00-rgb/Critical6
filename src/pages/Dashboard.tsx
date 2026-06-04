@@ -18,7 +18,7 @@ export default function Dashboard() {
     <>
       <PageHeader title={t('대시보드', 'Dashboard')} subtitle={t('회사는 지금 목표를 향해 제대로 가고 있는가?', 'Is the company on track toward its goals?')} />
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
         <StatCard label={t('전체 OKR 진행률', 'Overall OKR progress')} value={`${s.overallProgress}%`} />
         <StatCard label={t('Critical 6 완료율', 'Critical 6 completion')} value={`${s.c6Completion}%`} tone="good" />
         <StatCard label={t('위험 KR', 'At-risk KRs')} value={s.atRiskKr} tone={s.atRiskKr ? 'danger' : 'default'} />

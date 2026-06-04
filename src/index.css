@@ -6,6 +6,10 @@ html, body, #root {
   height: 100%;
 }
 
+/* Scale the whole UI up a touch on large displays so it fills big screens. */
+@media (min-width: 1280px) { html { font-size: 16.5px; } }
+@media (min-width: 1920px) { html { font-size: 17.5px; } }
+
 body {
   @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-900 dark:text-slate-100;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
