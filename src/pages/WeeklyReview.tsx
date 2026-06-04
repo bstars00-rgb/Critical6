@@ -57,20 +57,20 @@ export default function WeeklyReview() {
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <Card>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">위험 KR</h3>
-              {i.atRiskKr.length === 0 ? <p className="text-sm text-slate-400">없음</p> :
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">위험 KR</h3>
+              {i.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
                 i.atRiskKr.map((k: any) => (
-                  <div key={k.id} className="flex justify-between border-b border-slate-50 py-1 text-sm">
-                    <span className="text-slate-700">{k.title}</span>
+                  <div key={k.id} className="flex justify-between border-b border-slate-50 dark:border-slate-800 py-1 text-sm">
+                    <span className="text-slate-700 dark:text-slate-200">{k.title}</span>
                     <span className="text-amber-600">{Math.round(k.progress)}%</span>
                   </div>
                 ))}
             </Card>
             <Card>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700">지연/위험 작업</h3>
-              {i.delayed.length === 0 ? <p className="text-sm text-slate-400">없음</p> :
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">지연/위험 작업</h3>
+              {i.delayed.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
                 i.delayed.slice(0, 10).map((t: any) => (
-                  <div key={t.id} className="border-b border-slate-50 py-1 text-sm text-slate-700">{t.title}</div>
+                  <div key={t.id} className="border-b border-slate-50 dark:border-slate-800 py-1 text-sm text-slate-700 dark:text-slate-200">{t.title}</div>
                 ))}
             </Card>
           </div>

@@ -51,7 +51,7 @@ export default function Crm() {
           <div className="mb-1 flex items-center gap-2 text-sm font-medium text-amber-800"><Bell className="h-4 w-4" />Follow-up 알림</div>
           <div className="flex flex-wrap gap-2">
             {(followUps.data ?? []).map((a) => (
-              <span key={a.id} className={`rounded-full px-2 py-0.5 text-xs ${a.next_followup_date! < today ? 'bg-red-100 text-red-700' : 'bg-white text-amber-700'}`}>
+              <span key={a.id} className={`rounded-full px-2 py-0.5 text-xs ${a.next_followup_date! < today ? 'bg-red-100 text-red-700' : 'bg-white dark:bg-slate-800 text-amber-700'}`}>
                 {a.company_name} · {a.next_followup_date}{a.next_followup_date! < today ? ' (지남)' : ''}
               </span>
             ))}
@@ -59,10 +59,10 @@ export default function Crm() {
         </div>
       )}
 
-      <div className="mb-4 flex gap-1 border-b border-slate-200">
+      <div className="mb-4 flex gap-1 border-b border-slate-200 dark:border-slate-700">
         {(['pipeline', 'accounts', 'analysis'] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-2 text-sm font-medium ${tab === t ? 'border-b-2 border-brand-600 text-brand-700' : 'text-slate-500'}`}>
+            className={`px-3 py-2 text-sm font-medium ${tab === t ? 'border-b-2 border-brand-600 text-brand-700 dark:text-brand-300' : 'text-slate-500 dark:text-slate-400'}`}>
             {t === 'pipeline' ? 'Pipeline' : t === 'accounts' ? 'Accounts' : 'Pipeline vs Revenue'}
           </button>
         ))}
@@ -74,21 +74,21 @@ export default function Crm() {
             const items = (opps.data ?? []).filter((o) => o.stage === stage);
             const sum = items.reduce((s, o) => s + (o.expected_revenue ?? 0), 0);
             return (
-              <div key={stage} className="w-56 shrink-0 rounded-xl bg-slate-100/60 p-2">
+              <div key={stage} className="w-56 shrink-0 rounded-xl bg-slate-100/60 dark:bg-slate-800/60 p-2">
                 <div className="mb-2 flex items-center justify-between px-1">
-                  <span className="text-xs font-semibold text-slate-600">{STAGE_LABEL[stage]}</span>
-                  <span className="text-[10px] text-slate-400">{items.length} · {sum}k</span>
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{STAGE_LABEL[stage]}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500">{items.length} · {sum}k</span>
                 </div>
                 <div className="space-y-2">
                   {items.map((o) => (
                     <div key={o.id} className="card p-2">
-                      <div className="text-sm font-medium text-slate-700">{o.opportunity_name}</div>
-                      <div className="text-[11px] text-slate-400">{(o as any).account?.company_name}</div>
-                      <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-200">{o.opportunity_name}</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{(o as any).account?.company_name}</div>
+                      <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
                         <span>{o.expected_revenue}k</span><span>·</span><span>{o.probability}%</span>
                         {o.related_key_result_id && <Link2 className="h-3 w-3 text-emerald-500" />}
                       </div>
-                      <select className="mt-1.5 w-full rounded border border-slate-200 px-1 py-0.5 text-xs"
+                      <select className="mt-1.5 w-full rounded border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-xs"
                         value={o.stage} onChange={(e) => move.mutate({ id: o.id, stage: e.target.value as CrmStage })}>
                         {Object.keys(STAGE_LABEL).map((s) => <option key={s} value={s}>{STAGE_LABEL[s as CrmStage]}</option>)}
                       </select>
@@ -104,19 +104,19 @@ export default function Crm() {
       {tab === 'accounts' && (accounts.isLoading ? <Spinner /> : (
         <Card className="p-0">
           <table className="w-full text-sm">
-            <thead className="border-b text-left text-xs text-slate-500">
+            <thead className="border-b text-left text-xs text-slate-500 dark:text-slate-400">
               <tr><th className="px-4 py-2">고객사</th><th className="px-2 py-2">시장</th><th className="px-2 py-2">등급</th>
                 <th className="px-2 py-2">예상/실매출</th><th className="px-2 py-2">연결 KR</th><th className="px-2 py-2">상태</th></tr>
             </thead>
             <tbody>
               {(accounts.data ?? []).map((a) => (
-                <tr key={a.id} className="border-b border-slate-50">
-                  <td className="px-4 py-2 font-medium text-slate-700">{a.company_name}</td>
-                  <td className="px-2 py-2 text-slate-500">{a.market ?? a.country}</td>
-                  <td className="px-2 py-2 uppercase text-slate-500">{a.account_grade ?? '—'}</td>
-                  <td className="px-2 py-2 text-slate-500">{a.expected_revenue ?? '—'} / {a.actual_revenue ?? '—'}k</td>
-                  <td className="px-2 py-2">{a.related_key_result_id ? <Link2 className="h-3.5 w-3.5 text-emerald-500" /> : <span className="text-slate-300">—</span>}</td>
-                  <td className="px-2 py-2"><Badge className="bg-slate-100 text-slate-600">{a.account_status}</Badge></td>
+                <tr key={a.id} className="border-b border-slate-50 dark:border-slate-800">
+                  <td className="px-4 py-2 font-medium text-slate-700 dark:text-slate-200">{a.company_name}</td>
+                  <td className="px-2 py-2 text-slate-500 dark:text-slate-400">{a.market ?? a.country}</td>
+                  <td className="px-2 py-2 uppercase text-slate-500 dark:text-slate-400">{a.account_grade ?? '—'}</td>
+                  <td className="px-2 py-2 text-slate-500 dark:text-slate-400">{a.expected_revenue ?? '—'} / {a.actual_revenue ?? '—'}k</td>
+                  <td className="px-2 py-2">{a.related_key_result_id ? <Link2 className="h-3.5 w-3.5 text-emerald-500" /> : <span className="text-slate-300 dark:text-slate-600">—</span>}</td>
+                  <td className="px-2 py-2"><Badge className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">{a.account_status}</Badge></td>
                 </tr>
               ))}
             </tbody>
@@ -127,7 +127,7 @@ export default function Crm() {
 
       {tab === 'analysis' && (
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700">시장별 Pipeline(가중) vs 실매출</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">시장별 Pipeline(가중) vs 실매출</h3>
           {revenue.isLoading ? <Spinner /> : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenue.data ?? []}>
@@ -137,7 +137,7 @@ export default function Crm() {
               </BarChart>
             </ResponsiveContainer>
           )}
-          <p className="mt-2 text-xs text-slate-400">가중 파이프라인 = Σ(예상매출 × 확률). 실매출과의 간극이 큰 시장이 매출 위험 구간.</p>
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">가중 파이프라인 = Σ(예상매출 × 확률). 실매출과의 간극이 큰 시장이 매출 위험 구간.</p>
         </Card>
       )}
 

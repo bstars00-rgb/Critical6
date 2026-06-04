@@ -2,33 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: light;
-}
-
 html, body, #root {
   height: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-800 antialiased;
+  @apply bg-slate-50 text-slate-800 antialiased dark:bg-slate-900 dark:text-slate-100;
   font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
 }
 
 @layer components {
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm
+      dark:border-slate-700 dark:bg-slate-800;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm
-      outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm
+      text-slate-800 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100
+      dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:focus:ring-brand-900;
   }
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2
       text-sm font-medium transition disabled:opacity-50;
   }
   .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
-  .btn-ghost   { @apply btn text-slate-600 hover:bg-slate-100; }
-  .btn-outline { @apply btn border border-slate-300 bg-white hover:bg-slate-50; }
+  .btn-ghost   { @apply btn text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700; }
+  .btn-outline { @apply btn border border-slate-300 bg-white hover:bg-slate-50
+    dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700; }
 }

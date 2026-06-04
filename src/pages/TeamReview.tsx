@@ -55,7 +55,7 @@ export default function TeamReview() {
         <>
           <Card className="overflow-x-auto p-0">
             <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 text-left text-xs text-slate-500">
+              <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400">
                 <tr>
                   <th className="px-4 py-2">팀원</th><th className="px-2 py-2 w-40">KR 진행률</th>
                   <th className="px-2 py-2">작업</th><th className="px-2 py-2">지연</th><th className="px-2 py-2">이번 주 CFR</th>
@@ -63,16 +63,16 @@ export default function TeamReview() {
               </thead>
               <tbody>
                 {data.data.members.map((m: any) => (
-                  <tr key={m.user?.id} className="border-b border-slate-50">
+                  <tr key={m.user?.id} className="border-b border-slate-50 dark:border-slate-800">
                     <td className="px-4 py-2">
-                      <div className="font-medium text-slate-700">{m.user?.full_name ?? '—'}</div>
-                      <div className="text-[11px] text-slate-400">{m.role} · {m.user?.title ?? ''}</div>
+                      <div className="font-medium text-slate-700 dark:text-slate-200">{m.user?.full_name ?? '—'}</div>
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">{m.role} · {m.user?.title ?? ''}</div>
                     </td>
                     <td className="px-2 py-2">
                       <div className="flex items-center gap-2"><ProgressBar value={m.krProgress} /><span className="w-9 text-right text-xs">{m.krProgress}%</span></div>
                     </td>
-                    <td className="px-2 py-2 text-slate-600">{m.taskCount}</td>
-                    <td className="px-2 py-2"><span className={m.delayed ? 'font-medium text-red-600' : 'text-slate-400'}>{m.delayed}</span></td>
+                    <td className="px-2 py-2 text-slate-600 dark:text-slate-300">{m.taskCount}</td>
+                    <td className="px-2 py-2"><span className={m.delayed ? 'font-medium text-red-600' : 'text-slate-400 dark:text-slate-500'}>{m.delayed}</span></td>
                     <td className="px-2 py-2">
                       {m.cfrSubmitted
                         ? <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -86,11 +86,11 @@ export default function TeamReview() {
           </Card>
 
           <Card className="mt-4">
-            <h3 className="mb-2 text-sm font-semibold text-slate-700">위험 KR ({data.data.atRiskKr.length})</h3>
-            {data.data.atRiskKr.length === 0 ? <p className="text-sm text-slate-400">없음</p> :
+            <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">위험 KR ({data.data.atRiskKr.length})</h3>
+            {data.data.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
               data.data.atRiskKr.map((k: any) => (
-                <div key={k.id} className="flex justify-between border-b border-slate-50 py-1 text-sm">
-                  <span className="text-slate-700">{k.title}</span><span className="text-amber-600">{Math.round(k.progress)}%</span>
+                <div key={k.id} className="flex justify-between border-b border-slate-50 dark:border-slate-800 py-1 text-sm">
+                  <span className="text-slate-700 dark:text-slate-200">{k.title}</span><span className="text-amber-600">{Math.round(k.progress)}%</span>
                 </div>
               ))}
           </Card>

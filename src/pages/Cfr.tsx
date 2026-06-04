@@ -7,6 +7,7 @@ import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, Field, RiskBadge } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
+import { useT } from '@/i18n';
 import type { RiskLevel } from '@/types';
 
 const RISKS: RiskLevel[] = ['none', 'low', 'medium', 'high', 'critical'];
@@ -17,6 +18,7 @@ const empty = {
 
 export default function Cfr() {
   const qc = useQueryClient();
+  const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const uid = profile?.id;
   const [krId, setKrId] = useState('');
@@ -54,7 +56,7 @@ export default function Cfr() {
 
   return (
     <>
-      <PageHeader title="CFR Weekly Check-in" subtitle={`${weekStart()} 주차 · Conversation·Feedback·Recognition`} />
+      <PageHeader title={t('CFR 주간 체크인', 'CFR Weekly Check-in')} subtitle={`${weekStart()} · Conversation·Feedback·Recognition`} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
@@ -97,19 +99,19 @@ export default function Cfr() {
         </Card>
 
         <Card>
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">내 CFR 히스토리</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">내 CFR 히스토리</h3>
           {history.isLoading ? <Spinner /> : (
             <div className="space-y-2">
               {(history.data ?? []).map((c) => (
-                <div key={c.id} className="rounded-lg border border-slate-100 p-2 text-sm">
+                <div key={c.id} className="rounded-lg border border-slate-100 dark:border-slate-700 p-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">{c.week_start_date}</span>
+                    <span className="text-slate-500 dark:text-slate-400">{c.week_start_date}</span>
                     <RiskBadge level={c.risk_level} />
                   </div>
-                  <div className="mt-1 truncate text-slate-600">{c.progress_summary || c.ai_summary || '—'}</div>
+                  <div className="mt-1 truncate text-slate-600 dark:text-slate-300">{c.progress_summary || c.ai_summary || '—'}</div>
                 </div>
               ))}
-              {(history.data ?? []).length === 0 && <p className="text-sm text-slate-400">아직 작성한 CFR이 없습니다.</p>}
+              {(history.data ?? []).length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">아직 작성한 CFR이 없습니다.</p>}
             </div>
           )}
         </Card>

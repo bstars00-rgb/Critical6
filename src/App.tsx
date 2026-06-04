@@ -23,7 +23,7 @@ export default function App() {
   const { loading, session, init } = useAuthStore();
   useEffect(() => { init(); }, [init]);
 
-  if (loading) return <div className="grid h-full place-items-center text-slate-400">로딩 중…</div>;
+  if (loading) return <div className="grid h-full place-items-center text-slate-400 dark:text-slate-500">Loading…</div>;
   if (!session) return (
     <Routes>
       <Route path="/login" element={<Login />} />

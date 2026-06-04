@@ -64,17 +64,17 @@ export default function AiInsight() {
       </div>
 
       <Card className="mt-6">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700">저장된 인사이트 (rule-engine / DB)</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">저장된 인사이트 (rule-engine / DB)</h3>
         {stored.isLoading ? <Spinner /> : (
           <div className="space-y-2">
             {(stored.data ?? []).map((i: any) => (
-              <div key={i.id} className="rounded-lg border border-slate-100 p-2 text-sm">
-                <span className="text-xs text-slate-400">{i.insight_type}</span>
-                <div className="font-medium text-slate-700">{i.title}</div>
-                <div className="text-slate-500">{i.summary}</div>
+              <div key={i.id} className="rounded-lg border border-slate-100 dark:border-slate-700 p-2 text-sm">
+                <span className="text-xs text-slate-400 dark:text-slate-500">{i.insight_type}</span>
+                <div className="font-medium text-slate-700 dark:text-slate-200">{i.title}</div>
+                <div className="text-slate-500 dark:text-slate-400">{i.summary}</div>
               </div>
             ))}
-            {(stored.data ?? []).length === 0 && <p className="text-sm text-slate-400">저장된 인사이트 없음</p>}
+            {(stored.data ?? []).length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">저장된 인사이트 없음</p>}
           </div>
         )}
       </Card>

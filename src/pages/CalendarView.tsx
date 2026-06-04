@@ -21,7 +21,7 @@ export default function CalendarView() {
         action={
           <div className="flex gap-3 text-xs">
             {LEGEND.map((l) => (
-              <span key={l.label} className="inline-flex items-center gap-1.5 text-slate-500">
+              <span key={l.label} className="inline-flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />{l.label}
               </span>
             ))}

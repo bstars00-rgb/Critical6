@@ -6,9 +6,11 @@ import { keyResultsService } from '@/services/keyResults';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, Modal, Field, EmptyState } from '@/components/ui';
+import { useT } from '@/i18n';
 
 export default function CriticalSix() {
   const qc = useQueryClient();
+  const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const uid = profile?.id;
   const [modal, setModal] = useState(false);
@@ -47,18 +49,18 @@ export default function CriticalSix() {
 
   function Row({ c }: { c: any }) {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-slate-100 p-2">
+      <div className="flex items-center gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-2">
         <button title="오늘 집중" onClick={() => toggleToday.mutate({ id: c.id, on: !c.is_today_focus })}>
-          <Star className={`h-4 w-4 ${c.is_today_focus ? 'fill-amber-400 text-amber-400' : 'text-slate-300'}`} />
+          <Star className={`h-4 w-4 ${c.is_today_focus ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} />
         </button>
         <button onClick={() => complete.mutate(c.id)}>
-          <CheckCircle2 className={`h-5 w-5 ${c.status === 'completed' ? 'text-emerald-500' : 'text-slate-300'}`} />
+          <CheckCircle2 className={`h-5 w-5 ${c.status === 'completed' ? 'text-emerald-500' : 'text-slate-300 dark:text-slate-600'}`} />
         </button>
         <div className="flex-1">
-          <div className="text-sm text-slate-700">{c.title}</div>
-          {c.completion_criteria && <div className="text-[11px] text-slate-400">완료기준: {c.completion_criteria}</div>}
+          <div className="text-sm text-slate-700 dark:text-slate-200">{c.title}</div>
+          {c.completion_criteria && <div className="text-[11px] text-slate-400 dark:text-slate-500">완료기준: {c.completion_criteria}</div>}
         </div>
-        {c.due_date && <span className="text-xs text-slate-400">{c.due_date}</span>}
+        {c.due_date && <span className="text-xs text-slate-400 dark:text-slate-500">{c.due_date}</span>}
         <StatusBadge status={c.status} />
       </div>
     );
@@ -68,13 +70,14 @@ export default function CriticalSix() {
 
   return (
     <>
-      <PageHeader title="Critical 6" subtitle="매일/매주 반드시 집중하는 핵심 실행 (≤6)"
-        action={<button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />추가</button>} />
+      <PageHeader title="Critical 6" subtitle={t('매일/매주 반드시 집중하는 핵심 실행 (≤6)', 'The few must-do executions, daily/weekly (≤6)')}
+        action={<button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />{t('추가', 'Add')}</button>} />
 
       {overloaded && (
-        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/30 p-3 text-sm text-amber-700 dark:text-amber-300">
           <AlertTriangle className="h-4 w-4" />
-          활성 Critical 6가 {active.length}개입니다. 6개 이하로 집중하세요. (AI 경고)
+          {t(`활성 Critical 6가 ${active.length}개입니다. 6개 이하로 집중하세요. (AI 경고)`,
+             `You have ${active.length} active Critical 6 items. Focus on 6 or fewer. (AI warning)`)}
         </div>
       )}
 
