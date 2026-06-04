@@ -183,6 +183,18 @@ function createAuth(db: DemoDb) {
       cb?.('SIGNED_IN', sessionFor(u.id));
       return { data: { user: { id: u.id } }, error: null };
     },
+    // Demo signup: create an in-memory profile and sign in (no real backend).
+    async signUp({ email, options }: { email: string; password: string; options?: { data?: any } }) {
+      let u = db.users.find((x) => x.email === email);
+      if (!u) {
+        u = { id: uid(), email, full_name: options?.data?.full_name ?? email.split('@')[0], role: 'member', is_active: true, settings: {}, created_at: nowIso(), updated_at: nowIso(), created_by: null, updated_by: null };
+        db.users.push(u);
+      }
+      currentId = u.id;
+      if (hasLS) localStorage.setItem(KEY, u.id);
+      cb?.('SIGNED_IN', sessionFor(u.id));
+      return { data: { user: { id: u.id }, session: { user: { id: u.id } } }, error: null };
+    },
     async signOut() {
       currentId = null;
       if (hasLS) localStorage.removeItem(KEY);

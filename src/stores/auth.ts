@@ -8,6 +8,7 @@ interface AuthState {
   profile: User | null;
   init: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ needsConfirm: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -36,6 +37,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     set({ session: true, profile: await loadProfile() });
+  },
+
+  // Self-service signup. The DB trigger (0006) creates the profile row; the
+  // first account becomes admin. If email confirmation is on, no session yet.
+  signUp: async (email, password, fullName) => {
+    const { data, error } = await supabase.auth.signUp({
+      email, password, options: { data: { full_name: fullName } },
+    });
+    if (error) throw error;
+    const hasSession = !!data.session;
+    if (hasSession) set({ session: true, profile: await loadProfile() });
+    return { needsConfirm: !hasSession };
   },
 
   signOut: async () => {

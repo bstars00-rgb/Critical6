@@ -25,10 +25,14 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Build (demo mode — in-memory data, no backend)
+      # Uses the real Supabase backend when the repo secrets are set; otherwise
+      # the empty URL makes the app fall back to in-browser demo mode.
+      - name: Build
         run: npm run build
         env:
-          VITE_DEMO: 'true'
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_AI_PROVIDER: mock
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
