@@ -18,30 +18,31 @@ end $$;
 -- Generic activity log. Attach to any audited table; records old→new diffs.
 -- ----------------------------------------------------------------------------
 -- SECURITY DEFINER: the audit log must never be blockable by the caller's RLS.
+-- NOTE: operate on jsonb snapshots (to_jsonb), NOT on the NEW/OLD records — the
+-- `->>` operator is only defined for json/jsonb, never for a row type.
 create or replace function fn_log_activity()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
   v_actor uuid;
   v_changes jsonb := '{}'::jsonb;
   v_team uuid;
+  v_new jsonb := case when tg_op <> 'DELETE' then to_jsonb(new) end;
+  v_old jsonb := case when tg_op <> 'INSERT' then to_jsonb(old) end;
+  v_row jsonb := coalesce(v_new, v_old);
   k text;
 begin
-  -- actor: prefer the row's updated_by/created_by, else the auth context
-  v_actor := coalesce(
-    (case when tg_op = 'DELETE' then old else new end ->> 'updated_by')::uuid,
-    auth.uid()
-  );
+  -- actor: prefer the row's updated_by, else the auth context
+  v_actor := coalesce((v_row ->> 'updated_by')::uuid, auth.uid());
   begin
-    v_team := (case when tg_op = 'DELETE' then old else new end ->> 'team_id')::uuid;
+    v_team := (v_row ->> 'team_id')::uuid;   -- null when the table has no team_id
   exception when others then v_team := null;
   end;
 
   if tg_op = 'UPDATE' then
-    for k in select jsonb_object_keys(to_jsonb(new)) loop
-      if to_jsonb(new) -> k is distinct from to_jsonb(old) -> k
-         and k not in ('updated_at') then
+    for k in select jsonb_object_keys(v_new) loop
+      if v_new -> k is distinct from v_old -> k and k <> 'updated_at' then
         v_changes := v_changes || jsonb_build_object(
-          k, jsonb_build_object('old', to_jsonb(old) -> k, 'new', to_jsonb(new) -> k));
+          k, jsonb_build_object('old', v_old -> k, 'new', v_new -> k));
       end if;
     end loop;
     if v_changes = '{}'::jsonb then return new; end if;  -- nothing meaningful changed
@@ -54,9 +55,7 @@ begin
     lower(tg_op),
     v_actor,
     v_team,
-    case tg_op when 'UPDATE' then v_changes
-               when 'INSERT' then to_jsonb(new)
-               else to_jsonb(old) end
+    case tg_op when 'UPDATE' then v_changes when 'INSERT' then v_new else v_old end
   );
   return case when tg_op = 'DELETE' then old else new end;
 end $$;
