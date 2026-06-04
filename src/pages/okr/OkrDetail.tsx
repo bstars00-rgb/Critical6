@@ -10,12 +10,13 @@ import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, PriorityBadge, ProgressBar, Modal, Field } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
 import { OKR_STATUSES, statusLabel } from '@/lib/constants';
-import { useLang } from '@/i18n';
+import { useLang, useT } from '@/i18n';
 
 export default function OkrDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
   const lang = useLang();
+  const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const [krModal, setKrModal] = useState(false);
   const [ai, setAi] = useState<AiResult | null>(null);
@@ -52,7 +53,7 @@ export default function OkrDetail() {
 
   if (data.isLoading) return <Spinner />;
   const d = data.data!;
-  if (!d.objective) return <p className="text-slate-400 dark:text-slate-500">목표를 찾을 수 없습니다.</p>;
+  if (!d.objective) return <p className="text-slate-400 dark:text-slate-500">{t('목표를 찾을 수 없습니다.', 'Objective not found.')}</p>;
   const o = d.objective;
 
   return (
@@ -63,14 +64,14 @@ export default function OkrDetail() {
       <PageHeader title={o.title}
         subtitle={`${o.level} · ${o.year ?? ''} Q${o.quarter ?? ''}`}
         action={<button className="btn-outline" onClick={() => runAi.mutate()} disabled={runAi.isPending}>
-          <Sparkles className="h-4 w-4" />{runAi.isPending ? '분석 중…' : 'OKR 품질 체크'}</button>} />
+          <Sparkles className="h-4 w-4" />{runAi.isPending ? t('분석 중…', 'Analyzing…') : t('OKR 품질 체크', 'OKR quality check')}</button>} />
 
       <div className="grid grid-cols-3 gap-3">
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">진행률</div>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('진행률', 'Progress')}</div>
           <div className="mt-1 text-2xl font-bold">{Math.round(o.progress)}%</div>
           <ProgressBar value={o.progress} className="mt-2" /></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">상태</div><div className="mt-2"><StatusBadge status={o.status} /></div></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">우선순위</div><div className="mt-2"><PriorityBadge priority={o.priority} /></div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('상태', 'Status')}</div><div className="mt-2"><StatusBadge status={o.status} /></div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('우선순위', 'Priority')}</div><div className="mt-2"><PriorityBadge priority={o.priority} /></div></Card>
       </div>
 
       {ai && <div className="mt-4"><AiResultCard result={ai} title="OKR Quality Check" /></div>}
@@ -78,10 +79,10 @@ export default function OkrDetail() {
       <Card className="mt-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Key Results ({d.keyResults.length})</h3>
-          <button className="btn-ghost" onClick={() => setKrModal(true)}><Plus className="h-4 w-4" />KR 추가</button>
+          <button className="btn-ghost" onClick={() => setKrModal(true)}><Plus className="h-4 w-4" />{t('KR 추가', 'Add KR')}</button>
         </div>
         <div className="space-y-2">
-          {d.keyResults.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">KR이 없습니다.</p>}
+          {d.keyResults.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t('KR이 없습니다.', 'No key results.')}</p>}
           {d.keyResults.map((kr: any) => (
             <div key={kr.id} className="rounded-lg border border-slate-100 dark:border-slate-700 p-3">
               <div className="flex items-center gap-2">
@@ -108,14 +109,14 @@ export default function OkrDetail() {
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <Card>
-          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">연결된 KPI ({d.kpis.length})</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('연결된 KPI', 'Linked KPIs')} ({d.kpis.length})</h3>
           {d.kpis.map((k: any) => (
             <div key={k.id} className="flex justify-between py-1 text-sm">
               <span className="text-slate-600 dark:text-slate-300">{k.name}</span>
               <span className="text-slate-400 dark:text-slate-500">{k.current_value ?? '—'}/{k.target_value ?? '—'} {k.unit}</span>
             </div>
           ))}
-          {d.kpis.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">없음</p>}
+          {d.kpis.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t('없음', 'None')}</p>}
         </Card>
         <Card>
           <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">Critical 6 / Action ({d.criticalSix.length + d.actionPlans.length})</h3>
@@ -124,24 +125,24 @@ export default function OkrDetail() {
               <span className="text-slate-600 dark:text-slate-300">{t.title}</span><StatusBadge status={t.status} />
             </div>
           ))}
-          {d.criticalSix.length + d.actionPlans.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">없음</p>}
+          {d.criticalSix.length + d.actionPlans.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t('없음', 'None')}</p>}
         </Card>
       </div>
 
-      <Modal open={krModal} onClose={() => setKrModal(false)} title="Key Result 추가">
+      <Modal open={krModal} onClose={() => setKrModal(false)} title={t('Key Result 추가', 'Add key result')}>
         <div className="space-y-3">
-          <Field label="제목"><input className="input" autoFocus value={krForm.title}
+          <Field label={t('제목', 'Title')}><input className="input" autoFocus value={krForm.title}
             onChange={(e) => setKrForm({ ...krForm, title: e.target.value })} /></Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="현재값"><input className="input" type="number" value={krForm.current_value}
+            <Field label={t('현재값', 'Current')}><input className="input" type="number" value={krForm.current_value}
               onChange={(e) => setKrForm({ ...krForm, current_value: e.target.value })} /></Field>
-            <Field label="목표값"><input className="input" type="number" value={krForm.target_value}
+            <Field label={t('목표값', 'Target')}><input className="input" type="number" value={krForm.target_value}
               onChange={(e) => setKrForm({ ...krForm, target_value: e.target.value })} /></Field>
-            <Field label="단위"><input className="input" value={krForm.unit}
+            <Field label={t('단위', 'Unit')}><input className="input" value={krForm.unit}
               onChange={(e) => setKrForm({ ...krForm, unit: e.target.value })} /></Field>
           </div>
           <button className="btn-primary w-full" disabled={!krForm.title || addKr.isPending}
-            onClick={() => addKr.mutate()}>{addKr.isPending ? '추가 중…' : '추가'}</button>
+            onClick={() => addKr.mutate()}>{addKr.isPending ? t('추가 중…', 'Adding…') : t('추가', 'Add')}</button>
         </div>
       </Modal>
     </>

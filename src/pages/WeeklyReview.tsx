@@ -7,8 +7,10 @@ import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatCard } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
 import { weekStart } from '@/lib/date';
+import { useT } from '@/i18n';
 
 export default function WeeklyReview() {
+  const t = useT();
   const [teamId, setTeamId] = useState('');
   const [ai, setAi] = useState<AiResult | null>(null);
   const teams = useQuery({ queryKey: ['teams'], queryFn: () => teamsService.list() });
@@ -31,15 +33,15 @@ export default function WeeklyReview() {
 
   return (
     <>
-      <PageHeader title="Weekly AI Review" subtitle={`${weekStart()} 주차 · 완료/지연/위험/지원 자동 정리`}
+      <PageHeader title={t('주간 AI 리뷰', 'Weekly AI Review')} subtitle={`${weekStart()} · ${t('완료/지연/위험/지원 자동 정리', 'auto summary: done/delayed/at-risk/support')}`}
         action={
           <div className="flex gap-2">
             <select className="input w-44" value={teamId} onChange={(e) => { setTeamId(e.target.value); setAi(null); }}>
-              <option value="">전사</option>
-              {(teams.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              <option value="">{t('전사', 'Company-wide')}</option>
+              {(teams.data ?? []).map((tm) => <option key={tm.id} value={tm.id}>{tm.name}</option>)}
             </select>
             <button className="btn-primary" disabled={inputs.isLoading || run.isPending} onClick={() => run.mutate()}>
-              {run.isPending ? '분석 중…' : 'AI Review 생성'}
+              {run.isPending ? t('분석 중…', 'Analyzing…') : t('AI Review 생성', 'Generate AI Review')}
             </button>
           </div>
         } />
@@ -47,18 +49,18 @@ export default function WeeklyReview() {
       {inputs.isLoading || !i ? <Spinner /> : (
         <>
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatCard label="완료" value={i.completed.length} tone="good" />
-            <StatCard label="지연/위험" value={i.delayed.length} tone="warn" />
-            <StatCard label="위험 KR" value={i.atRiskKr.length} tone={i.atRiskKr.length ? 'danger' : 'default'} />
-            <StatCard label="CFR 미작성" value={i.membersWithoutCfr.length} hint={teamId ? '명' : '팀 선택 시 집계'} />
+            <StatCard label={t('완료', 'Completed')} value={i.completed.length} tone="good" />
+            <StatCard label={t('지연/위험', 'Delayed/at-risk')} value={i.delayed.length} tone="warn" />
+            <StatCard label={t('위험 KR', 'At-risk KRs')} value={i.atRiskKr.length} tone={i.atRiskKr.length ? 'danger' : 'default'} />
+            <StatCard label={t('CFR 미작성', 'CFR not submitted')} value={i.membersWithoutCfr.length} hint={teamId ? t('명', 'people') : t('팀 선택 시 집계', 'select a team')} />
           </div>
 
-          {ai && <div className="mt-4"><AiResultCard result={ai} title="Weekly AI Review" /></div>}
+          {ai && <div className="mt-4"><AiResultCard result={ai} title={t('주간 AI 리뷰', 'Weekly AI Review')} /></div>}
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <Card>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">위험 KR</h3>
-              {i.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('위험 KR', 'At-risk KRs')}</h3>
+              {i.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">{t('없음', 'None')}</p> :
                 i.atRiskKr.map((k: any) => (
                   <div key={k.id} className="flex justify-between border-b border-slate-50 dark:border-slate-800 py-1 text-sm">
                     <span className="text-slate-700 dark:text-slate-200">{k.title}</span>
@@ -67,8 +69,8 @@ export default function WeeklyReview() {
                 ))}
             </Card>
             <Card>
-              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">지연/위험 작업</h3>
-              {i.delayed.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
+              <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('지연/위험 작업', 'Delayed/at-risk tasks')}</h3>
+              {i.delayed.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">{t('없음', 'None')}</p> :
                 i.delayed.slice(0, 10).map((t: any) => (
                   <div key={t.id} className="border-b border-slate-50 dark:border-slate-800 py-1 text-sm text-slate-700 dark:text-slate-200">{t.title}</div>
                 ))}

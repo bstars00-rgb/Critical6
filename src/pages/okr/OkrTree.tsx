@@ -83,17 +83,17 @@ export default function OkrTree() {
 
       {tree.isLoading ? <Spinner /> : (
         <Card className="p-2">
-          {tree.data!.length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">Objective가 없습니다. 우측 상단에서 추가하세요.</div>}
+          {tree.data!.length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
           {tree.data!.map((n) => <Node key={n.id} node={n} depth={0} />)}
         </Card>
       )}
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Objective 추가">
+      <Modal open={modal} onClose={() => setModal(false)} title={t('Objective 추가', 'Add objective')}>
         <div className="space-y-3">
-          <Field label="제목"><input className="input" value={form.title} autoFocus
+          <Field label={t('제목', 'Title')}><input className="input" value={form.title} autoFocus
             onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="레벨">
+            <Field label={t('레벨', 'Level')}>
               <select className="input" value={form.level}
                 onChange={(e) => setForm({ ...form, level: e.target.value as ObjectiveLevel })}>
                 <option value="company">company</option>
@@ -101,20 +101,20 @@ export default function OkrTree() {
                 <option value="personal">personal</option>
               </select>
             </Field>
-            <Field label="상위 Objective">
+            <Field label={t('상위 Objective', 'Parent objective')}>
               <select className="input" value={form.parent_objective_id}
                 onChange={(e) => setForm({ ...form, parent_objective_id: e.target.value })}>
-                <option value="">(없음)</option>
+                <option value="">{t('(없음)', '(none)')}</option>
                 {(flat.data ?? []).map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
               </select>
             </Field>
-            <Field label="연도"><input className="input" type="number" value={form.year}
+            <Field label={t('연도', 'Year')}><input className="input" type="number" value={form.year}
               onChange={(e) => setForm({ ...form, year: +e.target.value })} /></Field>
-            <Field label="분기"><input className="input" type="number" min={1} max={4} value={form.quarter}
+            <Field label={t('분기', 'Quarter')}><input className="input" type="number" min={1} max={4} value={form.quarter}
               onChange={(e) => setForm({ ...form, quarter: +e.target.value })} /></Field>
           </div>
           <button className="btn-primary w-full" disabled={!form.title || create.isPending}
-            onClick={() => create.mutate()}>{create.isPending ? '생성 중…' : '생성'}</button>
+            onClick={() => create.mutate()}>{create.isPending ? t('생성 중…', 'Creating…') : t('생성', 'Create')}</button>
         </div>
       </Modal>
     </>

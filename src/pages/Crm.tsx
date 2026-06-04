@@ -7,11 +7,13 @@ import { keyResultsService } from '@/services/keyResults';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, Badge, Modal, Field, EmptyState } from '@/components/ui';
+import { useT } from '@/i18n';
 import type { CrmStage } from '@/types';
 
 type Tab = 'pipeline' | 'accounts' | 'analysis';
 
 export default function Crm() {
+  const t = useT();
   const qc = useQueryClient();
   const profile = useAuthStore((s) => s.profile);
   const [tab, setTab] = useState<Tab>('pipeline');
@@ -43,16 +45,16 @@ export default function Crm() {
 
   return (
     <>
-      <PageHeader title="CRM Extension" subtitle="고객사 · 영업기회 · OKR 연결"
+      <PageHeader title={t('CRM 확장', 'CRM Extension')} subtitle={t('고객사 · 영업기회 · OKR 연결', 'Accounts · opportunities · OKR links')}
         action={<button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />Opportunity</button>} />
 
       {(followUps.data ?? []).length > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
-          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-amber-800"><Bell className="h-4 w-4" />Follow-up 알림</div>
+        <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/30 p-3">
+          <div className="mb-1 flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300"><Bell className="h-4 w-4" />{t('Follow-up 알림', 'Follow-up alerts')}</div>
           <div className="flex flex-wrap gap-2">
             {(followUps.data ?? []).map((a) => (
               <span key={a.id} className={`rounded-full px-2 py-0.5 text-xs ${a.next_followup_date! < today ? 'bg-red-100 text-red-700' : 'bg-white dark:bg-slate-800 text-amber-700'}`}>
-                {a.company_name} · {a.next_followup_date}{a.next_followup_date! < today ? ' (지남)' : ''}
+                {a.company_name} · {a.next_followup_date}{a.next_followup_date! < today ? t(' (지남)', ' (overdue)') : ''}
               </span>
             ))}
           </div>
@@ -105,8 +107,8 @@ export default function Crm() {
         <Card className="p-0">
           <table className="w-full text-sm">
             <thead className="border-b text-left text-xs text-slate-500 dark:text-slate-400">
-              <tr><th className="px-4 py-2">고객사</th><th className="px-2 py-2">시장</th><th className="px-2 py-2">등급</th>
-                <th className="px-2 py-2">예상/실매출</th><th className="px-2 py-2">연결 KR</th><th className="px-2 py-2">상태</th></tr>
+              <tr><th className="px-4 py-2">{t('고객사', 'Account')}</th><th className="px-2 py-2">{t('시장', 'Market')}</th><th className="px-2 py-2">{t('등급', 'Grade')}</th>
+                <th className="px-2 py-2">{t('예상/실매출', 'Expected/Actual')}</th><th className="px-2 py-2">{t('연결 KR', 'Linked KR')}</th><th className="px-2 py-2">{t('상태', 'Status')}</th></tr>
             </thead>
             <tbody>
               {(accounts.data ?? []).map((a) => (
@@ -121,55 +123,55 @@ export default function Crm() {
               ))}
             </tbody>
           </table>
-          {(accounts.data ?? []).length === 0 && <EmptyState>고객사 데이터가 없습니다.</EmptyState>}
+          {(accounts.data ?? []).length === 0 && <EmptyState>{t('고객사 데이터가 없습니다.', 'No account data.')}</EmptyState>}
         </Card>
       ))}
 
       {tab === 'analysis' && (
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">시장별 Pipeline(가중) vs 실매출</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('시장별 Pipeline(가중) vs 실매출', 'Weighted pipeline vs actual revenue by market')}</h3>
           {revenue.isLoading ? <Spinner /> : (
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={revenue.data ?? []}>
                 <CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="market" /><YAxis /><Tooltip /><Legend />
-                <Bar dataKey="pipeline" name="가중 파이프라인(k)" fill="#3b6fff" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="actual" name="실매출(k)" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="pipeline" name={t('가중 파이프라인(k)', 'Weighted pipeline (k)')} fill="#3b6fff" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="actual" name={t('실매출(k)', 'Actual revenue (k)')} fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
-          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">가중 파이프라인 = Σ(예상매출 × 확률). 실매출과의 간극이 큰 시장이 매출 위험 구간.</p>
+          <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">{t('가중 파이프라인 = Σ(예상매출 × 확률). 실매출과의 간극이 큰 시장이 매출 위험 구간.', 'Weighted pipeline = Σ(expected × probability). Markets with a large gap vs actual revenue are the risk zones.')}</p>
         </Card>
       )}
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Opportunity 추가">
+      <Modal open={modal} onClose={() => setModal(false)} title={t('Opportunity 추가', 'Add opportunity')}>
         <div className="space-y-3">
-          <Field label="기회명"><input className="input" autoFocus value={form.opportunity_name}
+          <Field label={t('기회명', 'Opportunity name')}><input className="input" autoFocus value={form.opportunity_name}
             onChange={(e) => setForm({ ...form, opportunity_name: e.target.value })} /></Field>
-          <Field label="고객사">
+          <Field label={t('고객사', 'Account')}>
             <select className="input" value={form.account_id} onChange={(e) => setForm({ ...form, account_id: e.target.value })}>
-              <option value="">선택</option>
+              <option value="">{t('선택', 'Select')}</option>
               {(accounts.data ?? []).map((a) => <option key={a.id} value={a.id}>{a.company_name}</option>)}
             </select>
           </Field>
           <div className="grid grid-cols-3 gap-2">
-            <Field label="단계">
+            <Field label={t('단계', 'Stage')}>
               <select className="input" value={form.stage} onChange={(e) => setForm({ ...form, stage: e.target.value })}>
                 {Object.keys(STAGE_LABEL).map((s) => <option key={s} value={s}>{STAGE_LABEL[s as CrmStage]}</option>)}
               </select>
             </Field>
-            <Field label="예상매출(k)"><input className="input" type="number" value={form.expected_revenue}
+            <Field label={t('예상매출(k)', 'Expected (k)')}><input className="input" type="number" value={form.expected_revenue}
               onChange={(e) => setForm({ ...form, expected_revenue: e.target.value })} /></Field>
-            <Field label="확률(%)"><input className="input" type="number" value={form.probability}
+            <Field label={t('확률(%)', 'Probability (%)')}><input className="input" type="number" value={form.probability}
               onChange={(e) => setForm({ ...form, probability: e.target.value })} /></Field>
           </div>
-          <Field label="연결 KR (매출 목표)">
+          <Field label={t('연결 KR (매출 목표)', 'Linked KR (revenue goal)')}>
             <select className="input" value={form.related_key_result_id} onChange={(e) => setForm({ ...form, related_key_result_id: e.target.value })}>
-              <option value="">(미연결)</option>
+              <option value="">{t('(미연결)', '(unlinked)')}</option>
               {(krs.data ?? []).map((k) => <option key={k.id} value={k.id}>{k.title}</option>)}
             </select>
           </Field>
           <button className="btn-primary w-full" disabled={!form.opportunity_name || !form.account_id || create.isPending}
-            onClick={() => create.mutate()}>{create.isPending ? '추가 중…' : '추가'}</button>
+            onClick={() => create.mutate()}>{create.isPending ? t('추가 중…', 'Adding…') : t('추가', 'Add')}</button>
         </div>
       </Modal>
     </>

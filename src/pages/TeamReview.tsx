@@ -7,8 +7,10 @@ import { aiService, type AiResult } from '@/ai/aiService';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, ProgressBar, EmptyState } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
+import { useT } from '@/i18n';
 
 export default function TeamReview() {
+  const t = useT();
   const teams = useQuery({ queryKey: ['teams'], queryFn: () => teamsService.list() });
   const [teamId, setTeamId] = useState('');
   const [ai, setAi] = useState<AiResult | null>(null);
@@ -37,19 +39,19 @@ export default function TeamReview() {
 
   return (
     <>
-      <PageHeader title="Team Review" subtitle="팀원별 진행률 · 작업 · CFR · 위험 KR"
+      <PageHeader title={t('팀 리뷰', 'Team Review')} subtitle={t('팀원별 진행률 · 작업 · CFR · 위험 KR', 'Per-member progress · tasks · CFR · at-risk KRs')}
         action={
           <div className="flex gap-2">
             <select className="input w-44" value={teamId} onChange={(e) => { setTeamId(e.target.value); setAi(null); }}>
-              {(teams.data ?? []).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {(teams.data ?? []).map((tm) => <option key={tm.id} value={tm.id}>{tm.name}</option>)}
             </select>
             <button className="btn-primary" disabled={!teamId || brief.isPending} onClick={() => brief.mutate()}>
-              {brief.isPending ? '분석 중…' : 'AI 팀장 브리핑'}
+              {brief.isPending ? t('분석 중…', 'Analyzing…') : t('AI 팀장 브리핑', 'AI manager briefing')}
             </button>
           </div>
         } />
 
-      {ai && <div className="mb-4"><AiResultCard result={ai} title="AI 팀장 브리핑" /></div>}
+      {ai && <div className="mb-4"><AiResultCard result={ai} title={t('AI 팀장 브리핑', 'AI manager briefing')} /></div>}
 
       {data.isLoading || !data.data ? <Spinner /> : (
         <>
@@ -57,8 +59,8 @@ export default function TeamReview() {
             <table className="w-full text-sm">
               <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400">
                 <tr>
-                  <th className="px-4 py-2">팀원</th><th className="px-2 py-2 w-40">KR 진행률</th>
-                  <th className="px-2 py-2">작업</th><th className="px-2 py-2">지연</th><th className="px-2 py-2">이번 주 CFR</th>
+                  <th className="px-4 py-2">{t('팀원', 'Member')}</th><th className="px-2 py-2 w-40">{t('KR 진행률', 'KR progress')}</th>
+                  <th className="px-2 py-2">{t('작업', 'Tasks')}</th><th className="px-2 py-2">{t('지연', 'Delayed')}</th><th className="px-2 py-2">{t('이번 주 CFR', 'CFR this week')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -82,12 +84,12 @@ export default function TeamReview() {
                 ))}
               </tbody>
             </table>
-            {data.data.members.length === 0 && <EmptyState>팀원이 없습니다.</EmptyState>}
+            {data.data.members.length === 0 && <EmptyState>{t('팀원이 없습니다.', 'No team members.')}</EmptyState>}
           </Card>
 
           <Card className="mt-4">
-            <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">위험 KR ({data.data.atRiskKr.length})</h3>
-            {data.data.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">없음</p> :
+            <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('위험 KR', 'At-risk KRs')} ({data.data.atRiskKr.length})</h3>
+            {data.data.atRiskKr.length === 0 ? <p className="text-sm text-slate-400 dark:text-slate-500">{t('없음', 'None')}</p> :
               data.data.atRiskKr.map((k: any) => (
                 <div key={k.id} className="flex justify-between border-b border-slate-50 dark:border-slate-800 py-1 text-sm">
                   <span className="text-slate-700 dark:text-slate-200">{k.title}</span><span className="text-amber-600">{Math.round(k.progress)}%</span>

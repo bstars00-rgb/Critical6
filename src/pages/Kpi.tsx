@@ -10,14 +10,15 @@ import { Card, Spinner, Badge, ProgressBar, Modal } from '@/components/ui';
 import type { Kpi } from '@/types';
 
 function KpiTrendModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
+  const t = useT();
   const history = useQuery({ queryKey: ['kpi', 'history', kpi.id], queryFn: () => kpisService.history(kpi.id) });
   const data = (history.data ?? []).map((h: any) => ({
     date: String(h.recorded_at).slice(5, 10), value: Number(h.value),
   }));
   return (
-    <Modal open onClose={onClose} title={`${kpi.name} — 추이`}>
+    <Modal open onClose={onClose} title={`${kpi.name} — ${t('추이', 'Trend')}`}>
       {history.isLoading ? <Spinner /> : data.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">기록이 없습니다. 값을 업데이트하면 추이가 쌓입니다.</p>
+        <p className="py-8 text-center text-sm text-slate-400 dark:text-slate-500">{t('기록이 없습니다. 값을 업데이트하면 추이가 쌓입니다.', 'No history yet. Update the value to build a trend.')}</p>
       ) : (
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: -16 }}>
@@ -27,7 +28,7 @@ function KpiTrendModal({ kpi, onClose }: { kpi: Kpi; onClose: () => void }) {
             <Tooltip />
             {kpi.target_value != null && (
               <ReferenceLine y={kpi.target_value} stroke="#10b981" strokeDasharray="4 4"
-                label={{ value: `목표 ${kpi.target_value}`, fontSize: 10, fill: '#10b981' }} />
+                label={{ value: `${t('목표', 'Target')} ${kpi.target_value}`, fontSize: 10, fill: '#10b981' }} />
             )}
             <Line type="monotone" dataKey="value" stroke="#3b6fff" strokeWidth={2} dot={{ r: 3 }} />
           </LineChart>
@@ -61,7 +62,7 @@ export default function KpiPage() {
     // expects header: external_id,value
     const res = await kpisService.importCsv(parseKpiCsv(text));
     qc.invalidateQueries({ queryKey: ['kpi'] });
-    alert(`CSV 반영: ${res.matched}/${res.total} 매칭`);
+    alert(t(`CSV 반영: ${res.matched}/${res.total} 매칭`, `CSV applied: ${res.matched}/${res.total} matched`));
     e.target.value = '';
   }
 
@@ -72,7 +73,7 @@ export default function KpiPage() {
       <PageHeader title={t('KPI 대시보드', 'KPI Dashboard')} subtitle={t('OKR 실행 성과를 숫자로 추적 (수동 · CSV)', 'Track execution performance in numbers (manual · CSV)')}
         action={
           <label className="btn-outline cursor-pointer">
-            <Upload className="h-4 w-4" /> CSV 업로드
+            <Upload className="h-4 w-4" /> {t('CSV 업로드', 'CSV upload')}
             <input type="file" accept=".csv" className="hidden" onChange={onCsv} />
           </label>
         } />
@@ -81,9 +82,9 @@ export default function KpiPage() {
         <table className="w-full text-sm">
           <thead className="border-b border-slate-200 dark:border-slate-700 text-left text-xs text-slate-500 dark:text-slate-400">
             <tr>
-              <th className="px-4 py-2">KPI</th><th className="px-2 py-2">현재/목표</th>
-              <th className="px-2 py-2 w-40">달성률</th><th className="px-2 py-2">상태</th>
-              <th className="px-2 py-2">업데이트</th>
+              <th className="px-4 py-2">KPI</th><th className="px-2 py-2">{t('현재/목표', 'Current/Target')}</th>
+              <th className="px-2 py-2 w-40">{t('달성률', 'Achievement')}</th><th className="px-2 py-2">{t('상태', 'Status')}</th>
+              <th className="px-2 py-2">{t('업데이트', 'Update')}</th>
             </tr>
           </thead>
           <tbody>
@@ -107,11 +108,11 @@ export default function KpiPage() {
                 <td className="px-2 py-2">
                   <div className="flex items-center gap-1">
                     <input className="w-20 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs"
-                      type="number" placeholder="값"
+                      type="number" placeholder={t('값', 'value')}
                       value={edit[k.id] ?? ''} onChange={(e) => setEdit({ ...edit, [k.id]: e.target.value })} />
                     <button className="btn-ghost px-2 py-1 text-xs" disabled={!edit[k.id]}
                       onClick={() => { update.mutate({ kpi: k, value: +edit[k.id] }); setEdit({ ...edit, [k.id]: '' }); }}>
-                      저장
+                      {t('저장', 'Save')}
                     </button>
                   </div>
                 </td>
@@ -119,7 +120,7 @@ export default function KpiPage() {
             ))}
           </tbody>
         </table>
-        {(list.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">KPI가 없습니다.</div>}
+        {(list.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('KPI가 없습니다.', 'No KPIs.')}</div>}
       </Card>
 
       {trend && <KpiTrendModal kpi={trend} onClose={() => setTrend(null)} />}

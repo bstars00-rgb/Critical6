@@ -42,10 +42,10 @@ export default function Charts() {
 
   return (
     <>
-      <PageHeader title="Charts & Analysis" subtitle="의사결정용 분석 — 병목·과부하·미달 지점" />
+      <PageHeader title={t('차트 & 분석', 'Charts & Analysis')} subtitle={t('의사결정용 분석 — 병목·과부하·미달 지점', 'Decision analytics — bottlenecks, overload, shortfalls')} />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">상태별 작업 수</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('상태별 작업 수', 'Tasks by status')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <PieChart>
               <Pie data={byStatus} dataKey="value" nameKey="name" outerRadius={80} label>
@@ -57,7 +57,7 @@ export default function Charts() {
         </Card>
 
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">우선순위별 작업 수</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('우선순위별 작업 수', 'Tasks by priority')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={byPriority}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis allowDecimals={false} /><Tooltip />
               <Bar dataKey="value" fill="#3b6fff" radius={[4, 4, 0, 0]} /></BarChart>
@@ -65,7 +65,7 @@ export default function Charts() {
         </Card>
 
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">팀별 OKR 진행률</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('팀별 OKR 진행률', 'OKR progress by team')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={team.data ?? []}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="team" /><YAxis domain={[0, 100]} /><Tooltip />
               <Bar dataKey="progress" fill="#10b981" radius={[4, 4, 0, 0]} /></BarChart>
@@ -73,7 +73,7 @@ export default function Charts() {
         </Card>
 
         <Card>
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">담당자별 업무량</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('담당자별 업무량', 'Workload by owner')}</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={byOwner}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis allowDecimals={false} /><Tooltip />
               <Bar dataKey="value" fill="#f59e0b" radius={[4, 4, 0, 0]} /></BarChart>
@@ -81,7 +81,7 @@ export default function Charts() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">KR별 KPI 달성률</h3>
+          <h3 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('KR별 KPI 달성률', 'KPI achievement by KR')}</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={kpiData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis domain={[0, 120]} /><Tooltip />
               <Bar dataKey="value" fill="#3b6fff" radius={[4, 4, 0, 0]} /></BarChart>

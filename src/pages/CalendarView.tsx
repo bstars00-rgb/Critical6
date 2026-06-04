@@ -5,6 +5,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { calendarService } from '@/services/calendar';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner } from '@/components/ui';
+import { useT } from '@/i18n';
 
 const LEGEND = [
   { label: 'Critical 6', color: '#ef4444' },
@@ -13,11 +14,12 @@ const LEGEND = [
 ];
 
 export default function CalendarView() {
+  const t = useT();
   const events = useQuery({ queryKey: ['calendar'], queryFn: () => calendarService.events() });
 
   return (
     <>
-      <PageHeader title="Calendar" subtitle="마감일 기준 — Critical 6 · Action Plan · KR"
+      <PageHeader title={t('캘린더', 'Calendar')} subtitle={t('마감일 기준 — Critical 6 · Action Plan · KR', 'By due date — Critical 6 · Action Plan · KR')}
         action={
           <div className="flex gap-3 text-xs">
             {LEGEND.map((l) => (

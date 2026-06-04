@@ -9,8 +9,10 @@ import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
+import { useT } from '@/i18n';
 
 export default function AiInsight() {
+  const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const [results, setResults] = useState<Record<string, AiResult>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -48,13 +50,13 @@ export default function AiInsight() {
 
   return (
     <>
-      <PageHeader title="AI Insight" subtitle={`실행관리 코치 · provider: ${aiService.providerName}`} />
+      <PageHeader title="AI Insight" subtitle={`${t('실행관리 코치', 'Execution coach')} · provider: ${aiService.providerName}`} />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <button key={c.key} className="btn-outline justify-start" disabled={busy === c.key || krs.isLoading}
             onClick={() => run(c.key, c.run)}>
-            {busy === c.key ? '분석 중…' : c.label}
+            {busy === c.key ? t('분석 중…', 'Analyzing…') : c.label}
           </button>
         ))}
       </div>
@@ -64,7 +66,7 @@ export default function AiInsight() {
       </div>
 
       <Card className="mt-6">
-        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">저장된 인사이트 (rule-engine / DB)</h3>
+        <h3 className="mb-2 text-sm font-semibold text-slate-700 dark:text-slate-200">{t('저장된 인사이트 (rule-engine / DB)', 'Saved insights (rule-engine / DB)')}</h3>
         {stored.isLoading ? <Spinner /> : (
           <div className="space-y-2">
             {(stored.data ?? []).map((i: any) => (
@@ -74,7 +76,7 @@ export default function AiInsight() {
                 <div className="text-slate-500 dark:text-slate-400">{i.summary}</div>
               </div>
             ))}
-            {(stored.data ?? []).length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">저장된 인사이트 없음</p>}
+            {(stored.data ?? []).length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t('저장된 인사이트 없음', 'No saved insights')}</p>}
           </div>
         )}
       </Card>

@@ -55,7 +55,8 @@ export function ProgressBar({ value, className }: { value: number; className?: s
 }
 
 export function Spinner() {
-  return <div className="flex justify-center p-8 text-sm text-slate-400 dark:text-slate-500">불러오는 중…</div>;
+  const lang = useLang();
+  return <div className="flex justify-center p-8 text-sm text-slate-400 dark:text-slate-500">{lang === 'en' ? 'Loading…' : '불러오는 중…'}</div>;
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {

@@ -50,7 +50,7 @@ export default function CriticalSix() {
   function Row({ c }: { c: any }) {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-slate-100 dark:border-slate-700 p-2">
-        <button title="오늘 집중" onClick={() => toggleToday.mutate({ id: c.id, on: !c.is_today_focus })}>
+        <button title={t('오늘 집중', 'Today focus')} onClick={() => toggleToday.mutate({ id: c.id, on: !c.is_today_focus })}>
           <Star className={`h-4 w-4 ${c.is_today_focus ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} />
         </button>
         <button onClick={() => complete.mutate(c.id)}>
@@ -58,7 +58,7 @@ export default function CriticalSix() {
         </button>
         <div className="flex-1">
           <div className="text-sm text-slate-700 dark:text-slate-200">{c.title}</div>
-          {c.completion_criteria && <div className="text-[11px] text-slate-400 dark:text-slate-500">완료기준: {c.completion_criteria}</div>}
+          {c.completion_criteria && <div className="text-[11px] text-slate-400 dark:text-slate-500">{t('완료기준', 'Criteria')}: {c.completion_criteria}</div>}
         </div>
         {c.due_date && <span className="text-xs text-slate-400 dark:text-slate-500">{c.due_date}</span>}
         <StatusBadge status={c.status} />
@@ -83,33 +83,33 @@ export default function CriticalSix() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card><h3 className="mb-2 text-sm font-semibold">🔥 Today ({groups.today.length})</h3>
-          <div className="space-y-2">{groups.today.length ? groups.today.map((c) => <Row key={c.id} c={c} />) : <EmptyState>없음</EmptyState>}</div></Card>
+          <div className="space-y-2">{groups.today.length ? groups.today.map((c) => <Row key={c.id} c={c} />) : <EmptyState>{t('없음', 'None')}</EmptyState>}</div></Card>
         <Card><h3 className="mb-2 text-sm font-semibold">📅 This Week ({groups.week.length})</h3>
-          <div className="space-y-2">{groups.week.length ? groups.week.map((c) => <Row key={c.id} c={c} />) : <EmptyState>없음</EmptyState>}</div></Card>
+          <div className="space-y-2">{groups.week.length ? groups.week.map((c) => <Row key={c.id} c={c} />) : <EmptyState>{t('없음', 'None')}</EmptyState>}</div></Card>
         <Card><h3 className="mb-2 text-sm font-semibold">⏰ Delayed ({groups.delayed.length})</h3>
-          <div className="space-y-2">{groups.delayed.length ? groups.delayed.map((c) => <Row key={c.id} c={c} />) : <EmptyState>없음</EmptyState>}</div></Card>
+          <div className="space-y-2">{groups.delayed.length ? groups.delayed.map((c) => <Row key={c.id} c={c} />) : <EmptyState>{t('없음', 'None')}</EmptyState>}</div></Card>
         <Card><h3 className="mb-2 text-sm font-semibold">✅ Completed ({groups.completed.length})</h3>
-          <div className="space-y-2">{groups.completed.length ? groups.completed.map((c) => <Row key={c.id} c={c} />) : <EmptyState>없음</EmptyState>}</div></Card>
+          <div className="space-y-2">{groups.completed.length ? groups.completed.map((c) => <Row key={c.id} c={c} />) : <EmptyState>{t('없음', 'None')}</EmptyState>}</div></Card>
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Critical 6 추가">
+      <Modal open={modal} onClose={() => setModal(false)} title={t('Critical 6 추가', 'Add Critical 6')}>
         <div className="space-y-3">
-          <Field label="제목"><input className="input" autoFocus value={form.title}
+          <Field label={t('제목', 'Title')}><input className="input" autoFocus value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
-          <Field label="연결할 KR">
+          <Field label={t('연결할 KR', 'Link to KR')}>
             <select className="input" value={form.key_result_id}
               onChange={(e) => setForm({ ...form, key_result_id: e.target.value })}>
-              <option value="">(KR 선택 — 연결 권장)</option>
+              <option value="">{t('(KR 선택 — 연결 권장)', '(select a KR — linking recommended)')}</option>
               {(krs.data ?? []).map((k) => <option key={k.id} value={k.id}>{k.title}</option>)}
             </select>
           </Field>
-          <Field label="완료 기준"><input className="input" value={form.completion_criteria}
+          <Field label={t('완료 기준', 'Completion criteria')}><input className="input" value={form.completion_criteria}
             onChange={(e) => setForm({ ...form, completion_criteria: e.target.value })} /></Field>
-          <Field label="마감일"><input className="input" type="date" value={form.due_date}
+          <Field label={t('마감일', 'Due date')}><input className="input" type="date" value={form.due_date}
             onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></Field>
-          {active.length >= 6 && <p className="text-xs text-amber-600">⚠ 이미 활성 항목이 6개입니다.</p>}
+          {active.length >= 6 && <p className="text-xs text-amber-600">{t('⚠ 이미 활성 항목이 6개입니다.', '⚠ You already have 6 active items.')}</p>}
           <button className="btn-primary w-full" disabled={!form.title || create.isPending}
-            onClick={() => create.mutate()}>{create.isPending ? '추가 중…' : '추가'}</button>
+            onClick={() => create.mutate()}>{create.isPending ? t('추가 중…', 'Adding…') : t('추가', 'Add')}</button>
         </div>
       </Modal>
     </>

@@ -1,23 +1,25 @@
 import { Sparkles, AlertTriangle } from 'lucide-react';
 import type { AiResult } from '@/ai/aiService';
 import { cn } from '@/lib/cn';
+import { useT } from '@/i18n';
 
 const RISK_TONE: Record<string, string> = {
-  low: 'border-emerald-200 bg-emerald-50',
-  medium: 'border-amber-200 bg-amber-50',
-  high: 'border-orange-200 bg-orange-50',
-  critical: 'border-red-200 bg-red-50',
+  low: 'border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950/40',
+  medium: 'border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40',
+  high: 'border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/40',
+  critical: 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/40',
 };
 
 export function AiResultCard({ result, title }: { result: AiResult; title?: string }) {
+  const t = useT();
   return (
     <div className={cn('rounded-xl border p-4', RISK_TONE[result.risk_level])}>
       <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
         <Sparkles className="h-4 w-4 text-brand-600" />
-        {title ?? 'AI 분석'}
+        {title ?? t('AI 분석', 'AI analysis')}
         {result.manager_attention_required && (
-          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-            <AlertTriangle className="h-3 w-3" /> 팀장 확인 필요
+          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-100 dark:bg-red-900/40 px-2 py-0.5 text-xs font-medium text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-3 w-3" /> {t('팀장 확인 필요', 'Needs manager attention')}
           </span>
         )}
       </div>
@@ -43,7 +45,7 @@ export function AiResultCard({ result, title }: { result: AiResult; title?: stri
 
       {result.recommended_actions.length > 0 && (
         <div className="mt-3">
-          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">추천 액션</div>
+          <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">{t('추천 액션', 'Recommended actions')}</div>
           <ol className="mt-1 space-y-1">
             {result.recommended_actions.map((a, i) => (
               <li key={i} className="flex items-start gap-2 rounded-lg bg-white/70 dark:bg-slate-700/60 p-2 text-sm">

@@ -62,7 +62,7 @@ export default function ActionBoard() {
                         <PriorityBadge priority={a.priority} />
                         {linked
                           ? <Link2 className="h-3 w-3 text-emerald-500" />
-                          : <span title="OKR 미연결" className="inline-flex items-center gap-0.5 text-[10px] text-amber-600"><Unlink className="h-3 w-3" />미연결</span>}
+                          : <span title={t('OKR 미연결', 'No OKR link')} className="inline-flex items-center gap-0.5 text-[10px] text-amber-600"><Unlink className="h-3 w-3" />{t('미연결', 'Unlinked')}</span>}
                         {a.due_date && <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500">{a.due_date}</span>}
                       </div>
                       <select className="mt-1.5 w-full rounded border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-xs"
@@ -78,28 +78,28 @@ export default function ActionBoard() {
         })}
       </div>
 
-      <Modal open={modal} onClose={() => setModal(false)} title="Action Plan 추가">
+      <Modal open={modal} onClose={() => setModal(false)} title={t('Action Plan 추가', 'Add action plan')}>
         <div className="space-y-3">
-          <Field label="제목"><input className="input" autoFocus value={form.title}
+          <Field label={t('제목', 'Title')}><input className="input" autoFocus value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })} /></Field>
-          <Field label="연결할 KR (정렬 권장)">
+          <Field label={t('연결할 KR (정렬 권장)', 'Link to KR (alignment recommended)')}>
             <select className="input" value={form.key_result_id}
               onChange={(e) => setForm({ ...form, key_result_id: e.target.value })}>
-              <option value="">(미연결)</option>
+              <option value="">{t('(미연결)', '(unlinked)')}</option>
               {(krs.data ?? []).map((k) => <option key={k.id} value={k.id}>{k.title}</option>)}
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="마감일"><input className="input" type="date" value={form.due_date}
+            <Field label={t('마감일', 'Due date')}><input className="input" type="date" value={form.due_date}
               onChange={(e) => setForm({ ...form, due_date: e.target.value })} /></Field>
-            <Field label="우선순위">
+            <Field label={t('우선순위', 'Priority')}>
               <select className="input" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
                 {['low', 'medium', 'important', 'urgent', 'critical'].map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
             </Field>
           </div>
           <button className="btn-primary w-full" disabled={!form.title || create.isPending}
-            onClick={() => create.mutate()}>{create.isPending ? '추가 중…' : '추가'}</button>
+            onClick={() => create.mutate()}>{create.isPending ? t('추가 중…', 'Adding…') : t('추가', 'Add')}</button>
         </div>
       </Modal>
     </>

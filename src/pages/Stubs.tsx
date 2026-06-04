@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import type { AiResult } from '@/ai/aiService';
 
 export function Executive() {
+  const t = useT();
   const summary = useQuery({ queryKey: ['dash', 'summary'], queryFn: () => dashboardService.summary() });
   const [ai, setAi] = useState<AiResult | null>(null);
   useEffect(() => {
@@ -21,12 +22,12 @@ export function Executive() {
   const s = summary.data!;
   return (
     <>
-      <PageHeader title="Executive View" subtitle="회사 전체 달성률 · 핵심 KPI · 위험 목표" />
+      <PageHeader title={t('경영진 뷰', 'Executive View')} subtitle={t('회사 전체 달성률 · 핵심 KPI · 위험 목표', 'Company-wide achievement · key KPIs · at-risk goals')} />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">전체 진행률</div><div className="text-2xl font-bold">{s.overallProgress}%</div></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">위험 KR</div><div className="text-2xl font-bold text-red-600">{s.atRiskKr}</div></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">지연 작업</div><div className="text-2xl font-bold text-amber-600">{s.delayed}</div></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">미연결 Action</div><div className="text-2xl font-bold">{s.orphanActions}</div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('전체 진행률', 'Overall progress')}</div><div className="text-2xl font-bold">{s.overallProgress}%</div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('위험 KR', 'At-risk KRs')}</div><div className="text-2xl font-bold text-red-600">{s.atRiskKr}</div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('지연 작업', 'Delayed tasks')}</div><div className="text-2xl font-bold text-amber-600">{s.delayed}</div></Card>
+        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('미연결 Action', 'Unlinked actions')}</div><div className="text-2xl font-bold">{s.orphanActions}</div></Card>
       </div>
       {ai && <div className="mt-4 max-w-2xl">{/* reuse card */}<pre className="hidden">{JSON.stringify(ai)}</pre>
         <Card><h3 className="mb-2 text-sm font-semibold">AI Executive Summary</h3>
