@@ -6,6 +6,14 @@ html, body, #root {
   height: 100%;
 }
 
+/* Make native controls (select dropdowns, date pickers, scrollbars) match the
+   theme — fixes invisible white-on-white <option> lists in dark mode. */
+:root { color-scheme: light; }
+html.dark { color-scheme: dark; }
+/* Explicit option colors as a belt-and-suspenders fallback. */
+option { background-color: #fff; color: #1e293b; }
+html.dark option { background-color: #0f172a; color: #e2e8f0; }
+
 /* Scale the whole UI up a touch on large displays so it fills big screens. */
 @media (min-width: 1280px) { html { font-size: 16.5px; } }
 @media (min-width: 1920px) { html { font-size: 17.5px; } }
