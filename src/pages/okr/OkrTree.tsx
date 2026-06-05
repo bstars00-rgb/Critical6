@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Plus, ListTree, GanttChartSquare, Zap } from 'lucide-react';
+import { ChevronRight, Plus, ListTree, GanttChartSquare, Zap, AlertTriangle } from 'lucide-react';
 import { objectivesService, type ObjectiveNode } from '@/services/objectives';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, ProgressBar, Modal, Field } from '@/components/ui';
 import { OkrTimeline } from '@/components/OkrTimeline';
-import { useT } from '@/i18n';
+import { okrHealth, healthText } from '@/lib/okrHealth';
+import { useT, useLang } from '@/i18n';
 import { cn } from '@/lib/cn';
 import type { ObjectiveLevel } from '@/types';
 
@@ -68,8 +69,10 @@ function KrRow({ kr, depth, codeOf }: { kr: any; depth: number; codeOf: CodeOf }
 }
 
 function Node({ node, depth, codeOf }: { node: ObjectiveNode; depth: number; codeOf: CodeOf }) {
+  const lang = useLang();
   const [open, setOpen] = useState(true);
   const hasChildren = node.children.length > 0 || node.key_results.length > 0;
+  const health = okrHealth(node, node.key_results);
   return (
     <div>
       <div className={rowCls} style={{ paddingLeft: depth * 22 + 8 }}>
@@ -78,9 +81,15 @@ function Node({ node, depth, codeOf }: { node: ObjectiveNode; depth: number; cod
         </button>
         <TypeBadge kind="obj" level={node.level} />
         <span className="shrink-0 text-xs font-bold text-brand-600 dark:text-brand-300">{codeOf(node.id)}</span>
-        <Link to={`/okr/${node.id}`} className="flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100 hover:text-brand-700 dark:hover:text-brand-300">
+        <Link to={`/okr/${node.id}`} className="min-w-0 flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100 hover:text-brand-700 dark:hover:text-brand-300">
           {node.title}
         </Link>
+        {health.level !== 'none' && (
+          <span title={healthText(health, lang)}
+            className={`shrink-0 ${health.level === 'risk' ? 'text-red-500' : 'text-amber-500'}`}>
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+        )}
         <Grade value={node.progress} />
         <div className="flex w-28 shrink-0 justify-center"><StatusBadge status={node.status} /></div>
       </div>

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Sparkles, ArrowLeft, Pencil, Trash2, CalendarRange } from 'lucide-react';
+import { Plus, Sparkles, ArrowLeft, Pencil, Trash2, CalendarRange, AlertTriangle } from 'lucide-react';
+import { okrHealth, healthText } from '@/lib/okrHealth';
 import { objectivesService } from '@/services/objectives';
 import { keyResultsService } from '@/services/keyResults';
 import { aiService, type AiResult } from '@/ai/aiService';
@@ -136,6 +137,21 @@ export default function OkrDetail() {
 
       <ProgressHero actual={o.progress} predicted={predictedPct(o.start_date, o.due_date)}
         statusEl={<><StatusBadge status={o.status} /><PriorityBadge priority={o.priority} /></>} />
+
+      {(() => {
+        const h = okrHealth(o, d.keyResults);
+        if (h.level === 'none') return null;
+        const risk = h.level === 'risk';
+        return (
+          <div className={`mt-3 flex items-start gap-2 rounded-lg border px-3 py-2 text-sm ${risk ? 'border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300'}`}>
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <span className="font-semibold">{risk ? t('위험 / At Risk', 'At Risk') : t('주의 필요 / Attention', 'Attention')}</span>
+              <span className="ml-2">{healthText(h, lang)}</span>
+            </div>
+          </div>
+        );
+      })()}
 
       {ai && <div className="mt-4"><AiResultCard result={ai} title="OKR Quality Check" /></div>}
 
