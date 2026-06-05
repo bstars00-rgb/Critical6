@@ -9,13 +9,20 @@ export default function Login() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState(isDemo ? 'admin@company.com' : '');
   const [password, setPassword] = useState(isDemo ? 'password123' : '');
+  const [confirm, setConfirm] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const mismatch = mode === 'signup' && confirm.length > 0 && password !== confirm;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === 'signup' && password !== confirm) {
+      setError(t('비밀번호가 일치하지 않습니다. 다시 입력하세요.', 'Passwords do not match. Please re-enter.'));
+      return;
+    }
     setBusy(true); setError(null); setInfo(null);
     try {
       if (mode === 'signup') {
@@ -59,15 +66,31 @@ export default function Login() {
           <input className="input" value={password} onChange={(e) => setPassword(e.target.value)} type="password" required minLength={6} />
         </label>
 
-        {error && <div className="rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-600 dark:text-red-300">{error}</div>}
+        {isSignup && (
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">{t('비밀번호 확인', 'Confirm password')}</span>
+            <input
+              className={`input ${mismatch ? 'border-red-400 focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900' : ''}`}
+              value={confirm} onChange={(e) => setConfirm(e.target.value)} type="password" required minLength={6}
+            />
+            {mismatch && (
+              <span className="mt-1 block text-[11px] text-red-500">{t('비밀번호가 일치하지 않습니다', 'Passwords do not match')}</span>
+            )}
+            {!mismatch && confirm.length > 0 && password === confirm && (
+              <span className="mt-1 block text-[11px] text-emerald-500">{t('일치합니다 ✓', 'Match ✓')}</span>
+            )}
+          </label>
+        )}
+
+        {error &&<div className="rounded-lg bg-red-50 dark:bg-red-900/30 px-3 py-2 text-sm text-red-600 dark:text-red-300">{error}</div>}
         {info && <div className="rounded-lg bg-emerald-50 dark:bg-emerald-900/30 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">{info}</div>}
 
-        <button className="btn-primary w-full" disabled={busy}>
+        <button className="btn-primary w-full" disabled={busy || (isSignup && (mismatch || confirm.length === 0))}>
           {busy ? '…' : isSignup ? t('가입하기', 'Sign up') : t('로그인', 'Sign in')}
         </button>
 
         <button type="button" className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:underline"
-          onClick={() => { setMode(isSignup ? 'signin' : 'signup'); setError(null); setInfo(null); }}>
+          onClick={() => { setMode(isSignup ? 'signin' : 'signup'); setError(null); setInfo(null); setConfirm(''); }}>
           {isSignup ? t('이미 계정이 있으신가요? 로그인', 'Already have an account? Sign in')
                     : t('계정이 없으신가요? 가입하기', "No account? Sign up")}
         </button>
