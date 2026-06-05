@@ -44,10 +44,6 @@ export default function OkrDetail() {
     onSuccess: () => { invalidate(); setKrModal(false); setKrEditId(null); setKrForm(emptyKr); },
   });
   const deleteKr = useMutation({ mutationFn: (krId: string) => keyResultsService.remove(krId), onSuccess: invalidate });
-  const updateKrValue = useMutation({
-    mutationFn: ({ krId, value }: { krId: string; value: number }) => keyResultsService.update(krId, { current_value: value }),
-    onSuccess: invalidate,
-  });
   const saveObj = useMutation({
     mutationFn: () => objectivesService.update(id!, {
       title: objForm.title, description: objForm.description || null, status: objForm.status as any,
@@ -129,13 +125,17 @@ export default function OkrDetail() {
                 <button title={t('수정', 'Edit')} onClick={() => openKrEdit(kr)} className="text-slate-300 hover:text-brand-600 dark:text-slate-600"><Pencil className="h-4 w-4" /></button>
                 <button title={t('삭제', 'Delete')} onClick={() => onDeleteKr(kr)} className="text-slate-300 hover:text-red-500 dark:text-slate-600"><Trash2 className="h-4 w-4" /></button>
               </div>
-              <div className="mt-2 flex items-center gap-2">
-                <input type="number" defaultValue={kr.current_value ?? 0}
-                  className="w-24 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-sm"
-                  onBlur={(e) => updateKrValue.mutate({ krId: kr.id, value: +e.target.value })} />
-                <span className="text-xs text-slate-400 dark:text-slate-500">/ {kr.target_value ?? '—'} {kr.unit ?? ''}</span>
-                <div className="ml-auto w-32"><ProgressBar value={kr.progress} /></div>
-                <span className="w-10 text-right text-xs text-slate-500 dark:text-slate-400">{Math.round(kr.progress)}%</span>
+              <div className="mt-2 flex items-center gap-1.5">
+                <input key={`c${kr.current_value}`} type="number" defaultValue={kr.current_value ?? 0} title={t('현재값', 'Current')}
+                  className="w-20 rounded border border-slate-200 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  onBlur={(e) => keyResultsService.update(kr.id, { current_value: e.target.value === '' ? 0 : +e.target.value }).then(invalidate)} />
+                <span className="text-sm text-slate-400 dark:text-slate-500">/</span>
+                <input key={`t${kr.target_value}`} type="number" defaultValue={kr.target_value ?? ''} placeholder={t('목표', 'Target')} title={t('목표값', 'Target')}
+                  className="w-20 rounded border border-slate-200 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
+                  onBlur={(e) => keyResultsService.update(kr.id, { target_value: e.target.value === '' ? null : +e.target.value }).then(invalidate)} />
+                <span className="text-xs text-slate-400 dark:text-slate-500">{kr.unit ?? ''}</span>
+                <div className="ml-auto w-28 shrink-0"><ProgressBar value={kr.progress} /></div>
+                <span className="w-10 shrink-0 text-right text-xs text-slate-500 dark:text-slate-400">{Math.round(kr.progress)}%</span>
               </div>
             </div>
           ))}
