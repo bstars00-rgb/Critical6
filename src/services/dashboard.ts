@@ -42,6 +42,19 @@ export const dashboardService = {
     };
   },
 
+  // Company-level objectives + their KRs — shown as overall "direction" (no status).
+  async companyDirection() {
+    const { data: objs } = await supabase
+      .from('objectives').select('id, title, description, progress').eq('level', 'company').order('created_at');
+    const ids = (objs ?? []).map((o: any) => o.id);
+    let krs: any[] = [];
+    if (ids.length) {
+      const { data } = await supabase.from('key_results').select('id, title, objective_id').in('objective_id', ids).order('created_at');
+      krs = data ?? [];
+    }
+    return (objs ?? []).map((o: any) => ({ ...o, krs: krs.filter((k) => k.objective_id === o.id) }));
+  },
+
   async kpiAchievement() {
     const { data } = await supabase.from('kpis').select('name, achievement_rate, status, unit, current_value, target_value');
     return data ?? [];

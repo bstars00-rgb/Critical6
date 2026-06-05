@@ -85,8 +85,8 @@ export default function ImportPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {[['Objective', c!.objectives], ['KR', c!.keyResults], ['Action', c!.actionPlans], ['Critical 6', c!.criticalSix], [t('팀원', 'People'), c!.people]].map(([label, n]) => (
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {[['Objective', c!.objectives], ['KR', c!.keyResults], [t('분기목표', 'Quarters'), c!.quarters], ['Action', c!.actionPlans], ['Critical 6', c!.criticalSix], [t('팀원', 'People'), c!.people]].map(([label, n]) => (
                 <div key={String(label)} className="rounded-lg bg-slate-50 p-2 text-center dark:bg-slate-700/40">
                   <div className="text-lg font-bold text-slate-800 dark:text-slate-100">{n as number}</div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400">{label}</div>

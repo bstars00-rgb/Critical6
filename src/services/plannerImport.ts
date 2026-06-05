@@ -13,6 +13,19 @@ const clean = (s: any) => String(s ?? '').replace(/[​-‍﻿]/g, '').replace(/
 const cut = (s: any, n = 280) => clean(s).slice(0, n) || null;
 const dateOrNull = (s: any) => (/^\d{4}-\d{2}-\d{2}$/.test(clean(s)) ? clean(s) : null);
 const splitList = (s: any) => clean(s).split(/;|\n/).map(clean).filter(Boolean);
+// Quarter from a "Q1".."Q4" label or an "N분기" name; target number from a name.
+const quarterOf = (name: any, labels: any): number | null => {
+  const lq = clean(labels).match(/Q\s*([1-4])/i);
+  if (lq) return +lq[1];
+  const nm = clean(name).match(/([1-4])\s*분기/);
+  return nm ? +nm[1] : null;
+};
+const targetOf = (name: any): number | null => {
+  const s = clean(name).replace(/[1-4]\s*분기/, '').replace(/[, ]/g, '');
+  const m = s.match(/-?\d+(?:\.\d+)?/);
+  return m ? +m[0] : null;
+};
+const nowQuarter = () => Math.floor(new Date().getUTCMonth() / 3) + 1;
 const STATUS: Record<string, string> = { '시작 안 함': 'not_started', '진행 중': 'in_progress', '완료': 'completed' };
 const PRIO: Record<string, string> = { '낮음': 'low', '중간': 'medium', '중요': 'important', '긴급': 'urgent' };
 const mapStatus = (s: any) => STATUS[clean(s)] ?? 'not_started';
@@ -40,10 +53,10 @@ async function readWorkbook(file: File): Promise<Wb> {
 
 export interface ImportPreview {
   files: { name: string; kind: string; tasks: number }[];
-  counts: { objectives: number; keyResults: number; actionPlans: number; criticalSix: number; people: number };
+  counts: { objectives: number; keyResults: number; actionPlans: number; criticalSix: number; people: number; quarters: number };
   build: () => Promise<ImportData>;
 }
-interface ImportData { people: any[]; actionPlans: any[]; criticalSix: any[]; hasHQ: boolean; gstTask?: any[]; }
+interface ImportData { people: any[]; actionPlans: any[]; criticalSix: any[]; quarters: any[]; hasHQ: boolean; gstTask?: any[]; }
 
 const GST_KR_DEF: [number, string, string, number, string][] = [
   [1, 'KR1 Active Channel 1000', 'active_channel_count', 1000, '개 채널'],
@@ -75,6 +88,7 @@ export async function previewPlanner(files: File[]): Promise<ImportPreview> {
 
   const actionPlans: any[] = [];
   const criticalSix: any[] = [];
+  const quarters: any[] = [];
   let hasHQ = false; let gstTask: any[] | undefined;
 
   for (const { wb, kind } of tagged) {
@@ -83,20 +97,33 @@ export async function previewPlanner(files: File[]): Promise<ImportPreview> {
       gstTask = wb.rows.find((r) => /Team OKR/.test(clean(r[C.bucket])) && /^GST\s*:/.test(clean(r[C.name])));
     }
     if (kind === 'gst_okr')
-      for (const r of wb.rows) { if (krFor(clean(r[C.bucket]))) actionPlans.push(toAction(r)); }
+      for (const r of wb.rows) {
+        const kr = krFor(clean(r[C.bucket]));
+        if (!kr) continue;
+        const quarter = quarterOf(r[C.name], r[C.labels]);
+        const target = targetOf(r[C.name]);
+        // A KR-bucket task that encodes a quarterly target → quarterly milestone;
+        // otherwise it is a real action plan.
+        if (quarter && target != null) quarters.push({ key_result_id: kr, year: 2026, quarter, target_value: target });
+        else actionPlans.push(toAction(r));
+      }
     if (kind === 'actionplan')
       for (const r of wb.rows) actionPlans.push(toAction(r));
     if (kind === 'critical6')
       for (const r of wb.rows) criticalSix.push(toC6(r));
   }
 
-  // HQ company KRs preview count
+  // dedupe quarters by (kr, quarter) — keep the last seen
+  const qmap = new Map<string, any>();
+  for (const q of quarters) qmap.set(`${q.key_result_id}:${q.quarter}`, q);
+  const quartersD = [...qmap.values()];
+
   const companyKrCount = hasHQ ? 5 : 0;
   const objectives = 1 + 1; // company + GST
   return {
     files: tagged.map((t) => ({ name: t.name, kind: t.kind, tasks: t.wb.rows.length })),
-    counts: { objectives, keyResults: 5 + companyKrCount, actionPlans: actionPlans.length, criticalSix: criticalSix.length, people: peopleMap.size },
-    build: async () => ({ people: [...peopleMap.values()], actionPlans, criticalSix, hasHQ, gstTask }),
+    counts: { objectives, keyResults: 5 + companyKrCount, actionPlans: actionPlans.length, criticalSix: criticalSix.length, people: peopleMap.size, quarters: quartersD.length },
+    build: async () => ({ people: [...peopleMap.values()], actionPlans, criticalSix, quarters: quartersD, hasHQ, gstTask }),
   };
 
   function toAction(r: any[]) {
@@ -169,7 +196,18 @@ export async function applyPlanner(data: ImportData, onStep?: (m: string) => voi
         await supabase.from('critical_six').insert(part.map((c) => ({ ...c, team_id: teamId, owner_id: uid, ...stamp }))).throwOnError();
     }
 
-    return { ok: true, message: `완료: Objective 2, KR 5, Action ${data.actionPlans.length}, Critical6 ${data.criticalSix.length}, 팀원 ${data.people.length}` };
+    // Quarterly KR targets (kr_quarters); mirror the current quarter onto the KR.
+    if (data.quarters.length) {
+      step(`분기 목표 ${data.quarters.length}건…`);
+      await supabase.from('kr_quarters')
+        .upsert(data.quarters.map((q) => ({ ...q, ...stamp })), { onConflict: 'key_result_id,year,quarter' })
+        .throwOnError();
+      const q = nowQuarter();
+      for (const cell of data.quarters.filter((x) => x.year === 2026 && x.quarter === q))
+        await supabase.from('key_results').update({ target_value: cell.target_value, updated_by: uid }).eq('id', cell.key_result_id);
+    }
+
+    return { ok: true, message: `완료: Objective 2, KR 5, 분기목표 ${data.quarters.length}, Action ${data.actionPlans.length}, Critical6 ${data.criticalSix.length}, 팀원 ${data.people.length}` };
   } catch (e: any) {
     return { ok: false, message: e?.message ?? String(e) };
   }
