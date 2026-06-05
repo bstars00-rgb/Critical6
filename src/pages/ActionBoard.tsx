@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Link2, Unlink, CheckSquare, Users, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Link2, Unlink, CheckSquare, Users, Pencil, Trash2, Flame } from 'lucide-react';
 import { actionPlansService } from '@/services/actionPlans';
+import { criticalSixService } from '@/services/criticalSix';
 import { keyResultsService } from '@/services/keyResults';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
@@ -43,6 +44,16 @@ export default function ActionBoard() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['ap'] }),
   });
   const remove = useMutation({ mutationFn: (id: string) => actionPlansService.remove(id), onSuccess: () => qc.invalidateQueries({ queryKey: ['ap'] }) });
+  // Write today's Critical 6 from an Action Plan (daily execution of the action).
+  const toCritical6 = useMutation({
+    mutationFn: (a: any) => criticalSixService.create({
+      title: a.title, key_result_id: a.key_result_id || null, objective_id: a.objective_id || null,
+      owner_id: profile?.id as string, completion_criteria: a.description || null, priority: a.priority,
+      status: 'not_started', is_today_focus: true, is_weekly_focus: true,
+      focus_date: new Date().toISOString().slice(0, 10),
+    }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['c6'] }),
+  });
 
   const openAdd = () => { setEditId(null); setForm(emptyForm); setModal(true); };
   const openEdit = (a: any) => {
@@ -78,6 +89,8 @@ export default function ActionBoard() {
                     <div key={a.id} className="card group space-y-1.5 p-2.5">
                       <div className="flex items-start gap-1">
                         <div className="flex-1 text-sm font-medium leading-snug text-slate-700 dark:text-slate-200">{a.title}</div>
+                        <button title={t('오늘 Critical 6로', "Make today's Critical 6")}
+                          onClick={() => { toCritical6.mutate(a); }} className="shrink-0 text-slate-300 hover:text-amber-500 dark:text-slate-600"><Flame className="h-3.5 w-3.5" /></button>
                         <button title={t('수정', 'Edit')} onClick={() => openEdit(a)} className="shrink-0 text-slate-300 hover:text-brand-600 dark:text-slate-600"><Pencil className="h-3.5 w-3.5" /></button>
                         <button title={t('삭제', 'Delete')} onClick={() => onDelete(a)} className="shrink-0 text-slate-300 hover:text-red-500 dark:text-slate-600"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>

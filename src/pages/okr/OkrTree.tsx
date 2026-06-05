@@ -9,6 +9,40 @@ import { Card, Spinner, StatusBadge, ProgressBar, Modal, Field } from '@/compone
 import { useT } from '@/i18n';
 import type { ObjectiveLevel } from '@/types';
 
+function KrRow({ kr, depth }: { kr: any; depth: number }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const aps = kr.action_plans ?? [];
+  const doneAp = aps.filter((a: any) => a.status === 'completed').length;
+  return (
+    <div>
+      <div className="flex items-center gap-2 py-1 text-sm text-slate-600 dark:text-slate-300" style={{ paddingLeft: (depth + 1) * 18 + 22 }}>
+        <button onClick={() => setOpen(!open)} className={aps.length ? '' : 'invisible'}>
+          <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition ${open ? 'rotate-90' : ''}`} />
+        </button>
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
+        <span className="flex-1 truncate">{kr.title}</span>
+        {aps.length > 0 && (
+          <span className="shrink-0 rounded bg-slate-100 px-1.5 text-[10px] text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+            {t('실행', 'Exec')} {doneAp}/{aps.length}
+          </span>
+        )}
+        <span className="w-24 shrink-0 truncate text-right text-xs text-slate-400 dark:text-slate-500">{kr.current_value ?? 0}/{kr.target_value ?? '—'} {kr.unit ?? ''}</span>
+        <div className="w-24 shrink-0"><ProgressBar value={kr.progress} /></div>
+        <span className="w-9 shrink-0 text-right text-xs text-slate-400 dark:text-slate-500">{Math.round(kr.progress)}%</span>
+      </div>
+      {open && aps.map((a: any) => (
+        <div key={a.id} className="flex items-center gap-2 py-0.5 text-xs text-slate-500 dark:text-slate-400" style={{ paddingLeft: (depth + 1) * 18 + 48 }}>
+          <span className="text-slate-300 dark:text-slate-600">↳</span>
+          <span className="flex-1 truncate">{a.title}</span>
+          {a.due_date && <span className="text-[10px] text-slate-400">{a.due_date}</span>}
+          <StatusBadge status={a.status} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function Node({ node, depth }: { node: ObjectiveNode; depth: number }) {
   const [open, setOpen] = useState(true);
   const hasChildren = node.children.length > 0 || node.key_results.length > 0;
@@ -31,17 +65,7 @@ function Node({ node, depth }: { node: ObjectiveNode; depth: number }) {
       </div>
       {open && (
         <div>
-          {node.key_results.map((kr) => (
-            <div key={kr.id} className="flex items-center gap-2 py-1 text-sm text-slate-600 dark:text-slate-300"
-              style={{ paddingLeft: (depth + 1) * 18 + 30 }}>
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-400" />
-              <span className="flex-1 truncate">{kr.title}</span>
-              <span className="text-xs text-slate-400 dark:text-slate-500">
-                {kr.current_value ?? 0}/{kr.target_value ?? '—'} {kr.unit ?? ''}
-              </span>
-              <div className="w-24"><ProgressBar value={kr.progress} /></div>
-            </div>
-          ))}
+          {node.key_results.map((kr) => <KrRow key={kr.id} kr={kr} depth={depth} />)}
           {node.children.map((c) => <Node key={c.id} node={c} depth={depth + 1} />)}
         </div>
       )}
