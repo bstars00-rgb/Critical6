@@ -20,7 +20,9 @@ begin
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    case when v_existing = 0 then 'admin' else 'member' end
+    -- CASE resolves to text; cast explicitly to the enum or the insert errors
+    -- (42804: column "role" is of type user_role but expression is of type text)
+    (case when v_existing = 0 then 'admin' else 'member' end)::user_role
   )
   on conflict (id) do nothing;
   return new;
