@@ -49,7 +49,7 @@ function KrRow({ kr, depth, codeOf }: { kr: any; depth: number; codeOf: CodeOf }
         </button>
         <TypeBadge kind="kr" />
         <span className="shrink-0 text-xs font-bold text-orange-500">{codeOf(kr.id)}</span>
-        <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">{kr.title}</span>
+        <Link to={`/kr/${kr.id}`} className="min-w-0 flex-1 truncate text-sm text-slate-700 hover:text-brand-700 dark:text-slate-200 dark:hover:text-brand-300">{kr.title}</Link>
         <span className="hidden shrink-0 text-[10px] text-slate-400 dark:text-slate-500 sm:inline">{kr.current_value ?? 0}/{kr.target_value ?? '—'} {kr.unit ?? ''}</span>
         <Grade value={kr.progress} />
         <div className="flex w-28 shrink-0 justify-center"><StatusBadge status={kr.status} /></div>

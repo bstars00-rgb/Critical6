@@ -3,7 +3,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   LayoutDashboard, Target, Flame, KanbanSquare, MessageSquare, Gauge,
   Sparkles, Users, Building2, Contact, BarChart3, Calendar, Settings, Sun, LogOut,
-  CalendarCheck, Moon, Languages, Upload,
+  CalendarCheck, Moon, Languages, Upload, ListChecks,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useUi } from '@/stores/ui';
@@ -13,6 +13,7 @@ import { cn } from '@/lib/cn';
 const NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/my-day', label: 'My Day', icon: Sun },
+  { to: '/my-tasks', label: 'My Tasks', icon: ListChecks },
   { to: '/okr', label: 'OKR Tree', icon: Target },
   { to: '/critical-six', label: 'Critical 6', icon: Flame },
   { to: '/board', label: 'Action Board', icon: KanbanSquare },

@@ -7,6 +7,8 @@ import Dashboard from '@/pages/Dashboard';
 import MyDay from '@/pages/MyDay';
 import OkrTree from '@/pages/okr/OkrTree';
 import OkrDetail from '@/pages/okr/OkrDetail';
+import KrDetail from '@/pages/okr/KrDetail';
+import MyTasks from '@/pages/MyTasks';
 import CriticalSix from '@/pages/CriticalSix';
 import ActionBoard from '@/pages/ActionBoard';
 import Cfr from '@/pages/Cfr';
@@ -37,8 +39,10 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="my-day" element={<MyDay />} />
+        <Route path="my-tasks" element={<MyTasks />} />
         <Route path="okr" element={<OkrTree />} />
         <Route path="okr/:id" element={<OkrDetail />} />
+        <Route path="kr/:id" element={<KrDetail />} />
         <Route path="critical-six" element={<CriticalSix />} />
         <Route path="board" element={<ActionBoard />} />
         <Route path="cfr" element={<Cfr />} />

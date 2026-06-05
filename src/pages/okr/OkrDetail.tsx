@@ -181,7 +181,7 @@ export default function OkrDetail() {
             <div key={kr.id} className="rounded-lg border border-slate-100 dark:border-slate-700 p-3">
               <div className="flex items-center gap-2">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-orange-500 text-[9px] font-bold text-white">KR</span>
-                <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200">{kr.title}</span>
+                <Link to={`/kr/${kr.id}`} className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 hover:text-brand-700 dark:text-slate-200 dark:hover:text-brand-300">{kr.title}</Link>
                 <select className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs"
                   value={kr.status}
                   onChange={(e) => keyResultsService.update(kr.id, { status: e.target.value as any }).then(invalidate)}>
