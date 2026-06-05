@@ -4,11 +4,12 @@ import { Plus, Link2, Unlink, CheckSquare, Users, Pencil, Trash2, Flame } from '
 import { actionPlansService } from '@/services/actionPlans';
 import { criticalSixService } from '@/services/criticalSix';
 import { keyResultsService } from '@/services/keyResults';
+import { teamsService, usersService } from '@/services/teams';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, PriorityBadge, Modal, Field } from '@/components/ui';
 import { BOARD_COLUMNS, PRIORITIES, TASK_STATUSES, statusLabel, priorityLabel } from '@/lib/constants';
-import { STATUS_COLOR } from '@/lib/constants';
+import { STATUS_COLOR, PRIORITY_COLOR } from '@/lib/constants';
 import { useLang, useT } from '@/i18n';
 import type { TaskStatus } from '@/types';
 import { cn } from '@/lib/cn';
@@ -23,6 +24,7 @@ export default function ActionBoard() {
   const [modal, setModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [groupBy, setGroupBy] = useState<string>('status');
 
   const list = useQuery({ queryKey: ['ap', 'board'], queryFn: () => actionPlansService.board() });
   const krs = useQuery({ queryKey: ['kr', 'all'], queryFn: () => keyResultsService.list() });
@@ -63,25 +65,39 @@ export default function ActionBoard() {
   };
   const onDelete = (a: any) => { if (window.confirm(t('삭제할까요?', 'Delete this item?') + `\n"${a.title}"`)) remove.mutate(a.id); };
 
-  if (list.isLoading) return <Spinner />;
+  const teams = useQuery({ queryKey: ['teams'], queryFn: () => teamsService.list() });
+  const users = useQuery({ queryKey: ['users'], queryFn: () => usersService.list() });
+  const krMap = new Map((krs.data ?? []).map((k) => [k.id, k.title]));
+  const teamMap = new Map((teams.data ?? []).map((tm) => [tm.id, tm.name]));
+  const userMap = new Map((users.data ?? []).map((u) => [u.id, u.full_name]));
 
-  return (
-    <>
-      <PageHeader title={t('액션 보드', 'Action Board')} subtitle={t('모든 Action은 가능하면 OKR/KR/Critical 6에 연결', 'Link every action to an OKR/KR/Critical 6 where possible')}
-        action={<button className="btn-primary" onClick={openAdd}><Plus className="h-4 w-4" />{t('작업', 'Task')}</button>} />
+  const GROUPS: { key: string; label: string }[] = [
+    { key: 'status', label: t('상태', 'Status') },
+    { key: 'priority', label: t('우선순위', 'Priority') },
+    { key: 'bucket', label: t('버킷', 'Bucket') },
+    { key: 'key_result_id', label: 'KR' },
+    { key: 'team_id', label: t('팀', 'Team') },
+    { key: 'owner_id', label: t('담당자', 'Owner') },
+  ];
+  const labelFor = (field: string, v: any): string => {
+    if (v === '__none') return t('미지정', 'Unassigned');
+    if (field === 'status') return statusLabel(v, lang);
+    if (field === 'priority') return priorityLabel(v, lang);
+    if (field === 'key_result_id') return krMap.get(v) ?? v;
+    if (field === 'team_id') return teamMap.get(v) ?? v;
+    if (field === 'owner_id') return userMap.get(v) ?? String(v).slice(0, 6);
+    return v;
+  };
+  const columns = (() => {
+    if (groupBy === 'status') return BOARD_COLUMNS.map((s) => ({ key: s, color: STATUS_COLOR[s] }));
+    if (groupBy === 'priority') return [...PRIORITIES].reverse().map((p) => ({ key: p, color: PRIORITY_COLOR[p] }));
+    const seen = new Set<string>();
+    for (const i of items) seen.add((i as any)[groupBy] ?? '__none');
+    return [...seen].map((k) => ({ key: k, color: '' }));
+  })();
 
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        {BOARD_COLUMNS.map((col) => {
-          const colItems = items.filter((i) => i.status === col);
-          return (
-            <div key={col} className="rounded-xl bg-slate-100/60 dark:bg-slate-800/60 p-2">
-              <div className="mb-2 flex items-center justify-between px-1">
-                <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', STATUS_COLOR[col])}>{statusLabel(col, lang)}</span>
-                <span className="text-xs text-slate-400 dark:text-slate-500">{colItems.length}</span>
-              </div>
-              <div className="space-y-2">
-                {colItems.map((a) => {
-                  const linked = a.objective_id || a.key_result_id || a.kpi_id || a.critical_six_id;
+  const renderCard = (a: any) => {
+    const linked = a.objective_id || a.key_result_id || a.kpi_id || a.critical_six_id;
                   const checklist = Array.isArray(a.checklist) ? a.checklist : [];
                   const done = checklist.filter((c: any) => c?.done).length;
                   const assignees: string[] = (a as any).external_assignees ?? [];
@@ -121,8 +137,32 @@ export default function ActionBoard() {
                       </select>
                     </div>
                   );
-                })}
+  };
+
+  if (list.isLoading) return <Spinner />;
+
+  return (
+    <>
+      <PageHeader title={t('액션 보드', 'Action Board')} subtitle={t('모든 Action은 가능하면 OKR/KR/Critical 6에 연결', 'Link every action to an OKR/KR/Critical 6 where possible')}
+        action={
+          <div className="flex items-center gap-2">
+            <select className="input w-auto py-1.5 text-xs" value={groupBy} onChange={(e) => setGroupBy(e.target.value)}>
+              {GROUPS.map((g) => <option key={g.key} value={g.key}>{t('그룹: ', 'Group: ')}{g.label}</option>)}
+            </select>
+            <button className="btn-primary" onClick={openAdd}><Plus className="h-4 w-4" />{t('작업', 'Task')}</button>
+          </div>
+        } />
+
+      <div className="flex gap-3 overflow-x-auto pb-2">
+        {columns.map((col) => {
+          const colItems = items.filter((i) => ((i as any)[groupBy] ?? '__none') === col.key);
+          return (
+            <div key={String(col.key)} className="w-60 shrink-0 rounded-xl bg-slate-100/60 p-2 dark:bg-slate-800/60">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className={cn('truncate rounded-full px-2 py-0.5 text-xs font-medium', col.color || 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300')}>{labelFor(groupBy, col.key)}</span>
+                <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{colItems.length}</span>
               </div>
+              <div className="space-y-2">{colItems.map(renderCard)}</div>
             </div>
           );
         })}
