@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Sparkles, ArrowLeft, Pencil, Trash2, CalendarRange, AlertTriangle } from 'lucide-react';
+import { Plus, Sparkles, ArrowLeft, Pencil, Trash2, CalendarRange, AlertTriangle, TrendingUp } from 'lucide-react';
 import { okrHealth, healthText } from '@/lib/okrHealth';
 import { objectivesService } from '@/services/objectives';
 import { keyResultsService } from '@/services/keyResults';
+import { checkInsService } from '@/services/checkIns';
 import { aiService, type AiResult } from '@/ai/aiService';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
@@ -65,6 +66,8 @@ export default function OkrDetail() {
   const [objModal, setObjModal] = useState(false);
   const [objForm, setObjForm] = useState({ title: '', description: '', status: 'not_started', priority: 'medium', due_date: '', memo: '' });
   const [qOpen, setQOpen] = useState<Record<string, boolean>>({});
+  const [ciKr, setCiKr] = useState<any | null>(null);
+  const [ciForm, setCiForm] = useState({ value: '', status: 'in_progress', confidence: 7, note: '' });
   const [ai, setAi] = useState<AiResult | null>(null);
 
   const data = useQuery({ queryKey: ['okr', id], queryFn: () => objectivesService.withRelations(id!) });
@@ -83,6 +86,18 @@ export default function OkrDetail() {
     onSuccess: () => { invalidate(); setKrModal(false); setKrEditId(null); setKrForm(emptyKr); },
   });
   const deleteKr = useMutation({ mutationFn: (krId: string) => keyResultsService.remove(krId), onSuccess: invalidate });
+  const checkIn = useMutation({
+    mutationFn: () => checkInsService.create({
+      key_result_id: ciKr.id,
+      value: ciForm.value === '' ? null : +ciForm.value,
+      status: ciForm.status, confidence: ciForm.confidence, note: ciForm.note || null,
+    }),
+    onSuccess: () => { invalidate(); setCiKr(null); },
+  });
+  const openCheckIn = (kr: any) => {
+    setCiKr(kr);
+    setCiForm({ value: String(kr.current_value ?? ''), status: kr.status, confidence: kr.confidence_score ?? 7, note: '' });
+  };
   const saveObj = useMutation({
     mutationFn: () => objectivesService.update(id!, {
       title: objForm.title, description: objForm.description || null, status: objForm.status as any,
@@ -172,6 +187,9 @@ export default function OkrDetail() {
                   onChange={(e) => keyResultsService.update(kr.id, { status: e.target.value as any }).then(invalidate)}>
                   {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
                 </select>
+                <button title={t('체크인', 'Check-in')} onClick={() => openCheckIn(kr)}
+                  className="inline-flex items-center gap-1 rounded-md bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-100 dark:bg-slate-700 dark:text-brand-300">
+                  <TrendingUp className="h-3.5 w-3.5" />{t('체크인', 'Check-in')}</button>
                 <button title={t('분기별 입력', 'Quarterly')} onClick={() => setQOpen((q) => ({ ...q, [kr.id]: !q[kr.id] }))}
                   className={qOpen[kr.id] ? 'text-brand-600' : 'text-slate-300 hover:text-brand-600 dark:text-slate-600'}><CalendarRange className="h-4 w-4" /></button>
                 <button title={t('수정', 'Edit')} onClick={() => openKrEdit(kr)} className="text-slate-300 hover:text-brand-600 dark:text-slate-600"><Pencil className="h-4 w-4" /></button>
@@ -270,6 +288,32 @@ export default function OkrDetail() {
             onChange={(e) => setObjForm({ ...objForm, memo: e.target.value })} /></Field>
           <button className="btn-primary w-full" disabled={!objForm.title || saveObj.isPending}
             onClick={() => saveObj.mutate()}>{saveObj.isPending ? t('저장 중…', 'Saving…') : t('저장', 'Save')}</button>
+        </div>
+      </Modal>
+
+      <Modal open={!!ciKr} onClose={() => setCiKr(null)} title={`${t('체크인', 'Check-in')} · ${ciKr?.title ?? ''}`}>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={`${t('현재값', 'Current')}${ciKr?.target_value != null ? ` / ${ciKr.target_value}${ciKr.unit ?? ''}` : ''}`}>
+              <input className="input" type="number" autoFocus value={ciForm.value}
+                onChange={(e) => setCiForm({ ...ciForm, value: e.target.value })} /></Field>
+            <Field label={t('상태', 'Status')}>
+              <select className="input" value={ciForm.status} onChange={(e) => setCiForm({ ...ciForm, status: e.target.value })}>
+                {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
+              </select>
+            </Field>
+          </div>
+          <Field label={`${t('신뢰도', 'Confidence')}: ${ciForm.confidence}/10`}>
+            <input type="range" min={0} max={10} value={ciForm.confidence} className="w-full"
+              onChange={(e) => setCiForm({ ...ciForm, confidence: +e.target.value })} />
+          </Field>
+          <Field label={t('메모 (진행/막힌 점/다음)', 'Note (progress / blockers / next)')}>
+            <textarea className="input min-h-[64px]" value={ciForm.note}
+              onChange={(e) => setCiForm({ ...ciForm, note: e.target.value })} /></Field>
+          <button className="btn-primary w-full" disabled={checkIn.isPending} onClick={() => checkIn.mutate()}>
+            {checkIn.isPending ? t('기록 중…', 'Saving…') : t('체크인 기록', 'Record check-in')}
+          </button>
+          <p className="text-center text-[11px] text-slate-400">{t('기록하면 KR·상위 목표 진행률이 자동 반영됩니다.', 'Recording auto-updates KR and parent objective progress.')}</p>
         </div>
       </Modal>
     </>
