@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Sparkles, ArrowLeft } from 'lucide-react';
+import { Plus, Sparkles, ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { objectivesService } from '@/services/objectives';
 import { keyResultsService } from '@/services/keyResults';
 import { aiService, type AiResult } from '@/ai/aiService';
@@ -9,37 +9,61 @@ import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, PriorityBadge, ProgressBar, Modal, Field } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
-import { OKR_STATUSES, statusLabel } from '@/lib/constants';
+import { OKR_STATUSES, PRIORITIES, statusLabel, priorityLabel } from '@/lib/constants';
 import { useLang, useT } from '@/i18n';
+
+const emptyKr = { title: '', target_value: '', current_value: '', unit: '', status: 'not_started', priority: 'medium' };
 
 export default function OkrDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const nav = useNavigate();
   const lang = useLang();
   const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const [krModal, setKrModal] = useState(false);
+  const [krEditId, setKrEditId] = useState<string | null>(null);
+  const [krForm, setKrForm] = useState(emptyKr);
+  const [objModal, setObjModal] = useState(false);
+  const [objForm, setObjForm] = useState({ title: '', description: '', status: 'not_started', priority: 'medium', due_date: '', memo: '' });
   const [ai, setAi] = useState<AiResult | null>(null);
-  const [krForm, setKrForm] = useState({ title: '', target_value: '', current_value: '', unit: '' });
 
   const data = useQuery({ queryKey: ['okr', id], queryFn: () => objectivesService.withRelations(id!) });
+  const invalidate = () => { qc.invalidateQueries({ queryKey: ['okr'] }); };
 
-  const addKr = useMutation({
-    mutationFn: () => keyResultsService.create({
-      objective_id: id!, title: krForm.title,
-      target_value: krForm.target_value ? +krForm.target_value : null,
-      current_value: krForm.current_value ? +krForm.current_value : 0,
-      unit: krForm.unit || null, owner_id: profile?.id ?? null,
-      status: 'not_started', priority: 'medium',
-    }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['okr', id] }); setKrModal(false); setKrForm({ title: '', target_value: '', current_value: '', unit: '' }); },
+  const saveKr = useMutation({
+    mutationFn: () => {
+      const v = {
+        title: krForm.title,
+        target_value: krForm.target_value ? +krForm.target_value : null,
+        current_value: krForm.current_value ? +krForm.current_value : 0,
+        unit: krForm.unit || null, status: krForm.status as any, priority: krForm.priority as any,
+      };
+      return krEditId ? keyResultsService.update(krEditId, v) : keyResultsService.create({ ...v, objective_id: id!, owner_id: profile?.id ?? null });
+    },
+    onSuccess: () => { invalidate(); setKrModal(false); setKrEditId(null); setKrForm(emptyKr); },
   });
-
+  const deleteKr = useMutation({ mutationFn: (krId: string) => keyResultsService.remove(krId), onSuccess: invalidate });
   const updateKrValue = useMutation({
-    mutationFn: ({ krId, value }: { krId: string; value: number }) =>
-      keyResultsService.update(krId, { current_value: value }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['okr', id] }),
+    mutationFn: ({ krId, value }: { krId: string; value: number }) => keyResultsService.update(krId, { current_value: value }),
+    onSuccess: invalidate,
   });
+  const saveObj = useMutation({
+    mutationFn: () => objectivesService.update(id!, {
+      title: objForm.title, description: objForm.description || null, status: objForm.status as any,
+      priority: objForm.priority as any, due_date: objForm.due_date || null, memo: objForm.memo || null,
+    }),
+    onSuccess: () => { invalidate(); setObjModal(false); },
+  });
+  const deleteObj = useMutation({ mutationFn: () => objectivesService.remove(id!), onSuccess: () => { invalidate(); nav('/okr'); } });
+
+  const openKrAdd = () => { setKrEditId(null); setKrForm(emptyKr); setKrModal(true); };
+  const openKrEdit = (kr: any) => {
+    setKrEditId(kr.id);
+    setKrForm({ title: kr.title ?? '', target_value: String(kr.target_value ?? ''), current_value: String(kr.current_value ?? ''), unit: kr.unit ?? '', status: kr.status, priority: kr.priority });
+    setKrModal(true);
+  };
+  const onDeleteKr = (kr: any) => { if (window.confirm(t('이 KR을 삭제할까요?', 'Delete this KR?') + `\n"${kr.title}"`)) deleteKr.mutate(kr.id); };
 
   const runAi = useMutation({
     mutationFn: async () => {
@@ -63,8 +87,18 @@ export default function OkrDetail() {
       </Link>
       <PageHeader title={o.title}
         subtitle={`${o.level} · ${o.year ?? ''} Q${o.quarter ?? ''}`}
-        action={<button className="btn-outline" onClick={() => runAi.mutate()} disabled={runAi.isPending}>
-          <Sparkles className="h-4 w-4" />{runAi.isPending ? t('분석 중…', 'Analyzing…') : t('OKR 품질 체크', 'OKR quality check')}</button>} />
+        action={
+          <div className="flex gap-2">
+            <button className="btn-outline" onClick={() => runAi.mutate()} disabled={runAi.isPending}>
+              <Sparkles className="h-4 w-4" />{runAi.isPending ? t('분석 중…', 'Analyzing…') : t('OKR 품질 체크', 'OKR quality check')}</button>
+            <button className="btn-ghost" title={t('수정', 'Edit')}
+              onClick={() => { setObjForm({ title: o.title, description: o.description ?? '', status: o.status, priority: o.priority, due_date: o.due_date ?? '', memo: o.memo ?? '' }); setObjModal(true); }}>
+              <Pencil className="h-4 w-4" /></button>
+            <button className="btn-ghost text-red-500" title={t('삭제', 'Delete')}
+              onClick={() => { if (window.confirm(t('이 Objective와 하위 KR을 모두 삭제할까요?', 'Delete this objective and all its KRs?'))) deleteObj.mutate(); }}>
+              <Trash2 className="h-4 w-4" /></button>
+          </div>
+        } />
 
       <div className="grid grid-cols-3 gap-3">
         <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('진행률', 'Progress')}</div>
@@ -79,7 +113,7 @@ export default function OkrDetail() {
       <Card className="mt-4">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Key Results ({d.keyResults.length})</h3>
-          <button className="btn-ghost" onClick={() => setKrModal(true)}><Plus className="h-4 w-4" />{t('KR 추가', 'Add KR')}</button>
+          <button className="btn-ghost" onClick={openKrAdd}><Plus className="h-4 w-4" />{t('KR 추가', 'Add KR')}</button>
         </div>
         <div className="space-y-2">
           {d.keyResults.length === 0 && <p className="text-sm text-slate-400 dark:text-slate-500">{t('KR이 없습니다.', 'No key results.')}</p>}
@@ -89,10 +123,11 @@ export default function OkrDetail() {
                 <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200">{kr.title}</span>
                 <select className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs"
                   value={kr.status}
-                  onChange={(e) => keyResultsService.update(kr.id, { status: e.target.value as any })
-                    .then(() => qc.invalidateQueries({ queryKey: ['okr', id] }))}>
+                  onChange={(e) => keyResultsService.update(kr.id, { status: e.target.value as any }).then(invalidate)}>
                   {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
                 </select>
+                <button title={t('수정', 'Edit')} onClick={() => openKrEdit(kr)} className="text-slate-300 hover:text-brand-600 dark:text-slate-600"><Pencil className="h-4 w-4" /></button>
+                <button title={t('삭제', 'Delete')} onClick={() => onDeleteKr(kr)} className="text-slate-300 hover:text-red-500 dark:text-slate-600"><Trash2 className="h-4 w-4" /></button>
               </div>
               <div className="mt-2 flex items-center gap-2">
                 <input type="number" defaultValue={kr.current_value ?? 0}
@@ -129,7 +164,7 @@ export default function OkrDetail() {
         </Card>
       </div>
 
-      <Modal open={krModal} onClose={() => setKrModal(false)} title={t('Key Result 추가', 'Add key result')}>
+      <Modal open={krModal} onClose={() => { setKrModal(false); setKrEditId(null); }} title={krEditId ? t('Key Result 수정', 'Edit key result') : t('Key Result 추가', 'Add key result')}>
         <div className="space-y-3">
           <Field label={t('제목', 'Title')}><input className="input" autoFocus value={krForm.title}
             onChange={(e) => setKrForm({ ...krForm, title: e.target.value })} /></Field>
@@ -141,8 +176,47 @@ export default function OkrDetail() {
             <Field label={t('단위', 'Unit')}><input className="input" value={krForm.unit}
               onChange={(e) => setKrForm({ ...krForm, unit: e.target.value })} /></Field>
           </div>
-          <button className="btn-primary w-full" disabled={!krForm.title || addKr.isPending}
-            onClick={() => addKr.mutate()}>{addKr.isPending ? t('추가 중…', 'Adding…') : t('추가', 'Add')}</button>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t('상태', 'Status')}>
+              <select className="input" value={krForm.status} onChange={(e) => setKrForm({ ...krForm, status: e.target.value })}>
+                {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
+              </select>
+            </Field>
+            <Field label={t('우선순위', 'Priority')}>
+              <select className="input" value={krForm.priority} onChange={(e) => setKrForm({ ...krForm, priority: e.target.value })}>
+                {PRIORITIES.map((p) => <option key={p} value={p}>{priorityLabel(p, lang)}</option>)}
+              </select>
+            </Field>
+          </div>
+          <button className="btn-primary w-full" disabled={!krForm.title || saveKr.isPending}
+            onClick={() => saveKr.mutate()}>{saveKr.isPending ? t('저장 중…', 'Saving…') : krEditId ? t('저장', 'Save') : t('추가', 'Add')}</button>
+        </div>
+      </Modal>
+
+      <Modal open={objModal} onClose={() => setObjModal(false)} title={t('Objective 수정', 'Edit objective')}>
+        <div className="space-y-3">
+          <Field label={t('제목', 'Title')}><input className="input" autoFocus value={objForm.title}
+            onChange={(e) => setObjForm({ ...objForm, title: e.target.value })} /></Field>
+          <Field label={t('설명', 'Description')}><textarea className="input min-h-[56px]" value={objForm.description}
+            onChange={(e) => setObjForm({ ...objForm, description: e.target.value })} /></Field>
+          <div className="grid grid-cols-3 gap-2">
+            <Field label={t('상태', 'Status')}>
+              <select className="input" value={objForm.status} onChange={(e) => setObjForm({ ...objForm, status: e.target.value })}>
+                {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
+              </select>
+            </Field>
+            <Field label={t('우선순위', 'Priority')}>
+              <select className="input" value={objForm.priority} onChange={(e) => setObjForm({ ...objForm, priority: e.target.value })}>
+                {PRIORITIES.map((p) => <option key={p} value={p}>{priorityLabel(p, lang)}</option>)}
+              </select>
+            </Field>
+            <Field label={t('마감일', 'Due')}><input className="input" type="date" value={objForm.due_date}
+              onChange={(e) => setObjForm({ ...objForm, due_date: e.target.value })} /></Field>
+          </div>
+          <Field label={t('메모', 'Memo')}><input className="input" value={objForm.memo}
+            onChange={(e) => setObjForm({ ...objForm, memo: e.target.value })} /></Field>
+          <button className="btn-primary w-full" disabled={!objForm.title || saveObj.isPending}
+            onClick={() => saveObj.mutate()}>{saveObj.isPending ? t('저장 중…', 'Saving…') : t('저장', 'Save')}</button>
         </div>
       </Modal>
     </>
