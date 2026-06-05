@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Link2, Unlink } from 'lucide-react';
+import { Plus, Link2, Unlink, CheckSquare, Users } from 'lucide-react';
 import { actionPlansService } from '@/services/actionPlans';
 import { keyResultsService } from '@/services/keyResults';
 import { useAuthStore } from '@/stores/auth';
@@ -55,17 +55,34 @@ export default function ActionBoard() {
               <div className="space-y-2">
                 {colItems.map((a) => {
                   const linked = a.objective_id || a.key_result_id || a.kpi_id || a.critical_six_id;
+                  const checklist = Array.isArray(a.checklist) ? a.checklist : [];
+                  const done = checklist.filter((c: any) => c?.done).length;
+                  const assignees: string[] = (a as any).external_assignees ?? [];
                   return (
-                    <div key={a.id} className="card p-2">
-                      <div className="text-sm text-slate-700 dark:text-slate-200">{a.title}</div>
-                      <div className="mt-1.5 flex items-center gap-1.5">
+                    <div key={a.id} className="card space-y-1.5 p-2.5">
+                      <div className="text-sm font-medium leading-snug text-slate-700 dark:text-slate-200">{a.title}</div>
+                      {a.description && (
+                        <p className="line-clamp-2 text-[11px] leading-snug text-slate-400 dark:text-slate-500">{a.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <PriorityBadge priority={a.priority} />
+                        {checklist.length > 0 && (
+                          <span className="inline-flex items-center gap-0.5 rounded bg-slate-100 px-1 text-[10px] text-slate-500 dark:bg-slate-700 dark:text-slate-300">
+                            <CheckSquare className="h-3 w-3" />{done}/{checklist.length}
+                          </span>
+                        )}
                         {linked
                           ? <Link2 className="h-3 w-3 text-emerald-500" />
                           : <span title={t('OKR 미연결', 'No OKR link')} className="inline-flex items-center gap-0.5 text-[10px] text-amber-600"><Unlink className="h-3 w-3" />{t('미연결', 'Unlinked')}</span>}
                         {a.due_date && <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500">{a.due_date}</span>}
                       </div>
-                      <select className="mt-1.5 w-full rounded border border-slate-200 dark:border-slate-700 px-1 py-0.5 text-xs"
+                      {assignees.length > 0 && (
+                        <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                          <Users className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{assignees.map((n) => n.replace(/\(.*\)/, '').trim()).join(', ')}</span>
+                        </div>
+                      )}
+                      <select className="w-full rounded border border-slate-200 bg-white px-1 py-0.5 text-xs dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200"
                         value={a.status} onChange={(e) => move.mutate({ id: a.id, status: e.target.value as TaskStatus })}>
                         {BOARD_COLUMNS.concat('cancelled').map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
                       </select>
