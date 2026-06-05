@@ -81,10 +81,14 @@ export default function OkrTree() {
       <PageHeader title={t('OKR 트리', 'OKR Tree')} subtitle={t('Company → Team → Personal 정렬', 'Company → Team → Personal alignment')}
         action={<button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />Objective</button>} />
 
-      {tree.isLoading ? <Spinner /> : (
+      {tree.isLoading ? <Spinner /> : tree.isError ? (
+        <Card className="p-6 text-center text-sm text-red-500">
+          {t('불러오지 못했습니다', 'Failed to load')}: {String((tree.error as any)?.message ?? '')}
+        </Card>
+      ) : (
         <Card className="p-2">
-          {tree.data!.length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
-          {tree.data!.map((n) => <Node key={n.id} node={n} depth={0} />)}
+          {(tree.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
+          {(tree.data ?? []).map((n) => <Node key={n.id} node={n} depth={0} />)}
         </Card>
       )}
 

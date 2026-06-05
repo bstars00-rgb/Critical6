@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   LayoutDashboard, Target, Flame, KanbanSquare, MessageSquare, Gauge,
   Sparkles, Users, Building2, Contact, BarChart3, Calendar, Settings, Sun, LogOut,
@@ -31,6 +32,7 @@ export default function AppLayout() {
   const { profile, signOut } = useAuthStore();
   const { theme, toggleTheme, lang, setLang } = useUi();
   const t = useT();
+  const location = useLocation();
   return (
     <div className="flex h-full">
       <aside className="flex w-60 shrink-0 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
@@ -75,7 +77,9 @@ export default function AppLayout() {
       </aside>
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto w-full max-w-[1760px] px-8 py-8 2xl:px-12">
-          <Outlet />
+          <ErrorBoundary key={location.pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </div>
       </main>
     </div>
