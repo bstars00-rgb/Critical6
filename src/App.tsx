@@ -17,6 +17,7 @@ import WeeklyReview from '@/pages/WeeklyReview';
 import TeamReview from '@/pages/TeamReview';
 import CalendarView from '@/pages/CalendarView';
 import Crm from '@/pages/Crm';
+import ImportPage from '@/pages/ImportPage';
 import { Executive, Settings } from '@/pages/Stubs';
 
 export default function App() {
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="team" element={<TeamReview />} />
         <Route path="executive" element={<Executive />} />
         <Route path="crm" element={<Crm />} />
+        <Route path="import" element={<ImportPage />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       <Route path="/login" element={<Navigate to="/" replace />} />

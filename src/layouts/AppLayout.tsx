@@ -3,7 +3,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
   LayoutDashboard, Target, Flame, KanbanSquare, MessageSquare, Gauge,
   Sparkles, Users, Building2, Contact, BarChart3, Calendar, Settings, Sun, LogOut,
-  CalendarCheck, Moon, Languages,
+  CalendarCheck, Moon, Languages, Upload,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth';
 import { useUi } from '@/stores/ui';
@@ -25,6 +25,7 @@ const NAV = [
   { to: '/team', label: 'Team Review', icon: Users },
   { to: '/executive', label: 'Executive', icon: Building2 },
   { to: '/crm', label: 'CRM', icon: Contact },
+  { to: '/import', label: 'Import', icon: Upload },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
