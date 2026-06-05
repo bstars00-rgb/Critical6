@@ -132,6 +132,13 @@ export default function OkrTree() {
     },
   });
 
+  // Company-level objectives live on the Dashboard ("direction") — the tree
+  // starts at team level, so lift team objectives up out of their company parent.
+  const displayNodes = useMemo(
+    () => (tree.data ?? []).flatMap((r) => (r.level === 'company' ? r.children : [r])),
+    [tree.data],
+  );
+
   // Stable display codes (O-1, KR-1, A-1) in render order.
   const codeMap = useMemo(() => {
     const m = new Map<string, string>(); const c = { o: 0, kr: 0, ap: 0 };
@@ -145,9 +152,9 @@ export default function OkrTree() {
         walk(o.children);
       }
     };
-    walk(tree.data ?? []);
+    walk(displayNodes);
     return m;
-  }, [tree.data]);
+  }, [displayNodes]);
   const codeOf: CodeOf = (id) => codeMap.get(id) ?? '';
 
   return (
@@ -181,7 +188,7 @@ export default function OkrTree() {
           {t('불러오지 못했습니다', 'Failed to load')}: {String((tree.error as any)?.message ?? '')}
         </Card>
       ) : view === 'timeline' ? (
-        <Card className="p-2"><OkrTimeline nodes={tree.data ?? []} year={year} /></Card>
+        <Card className="p-2"><OkrTimeline nodes={displayNodes} year={year} /></Card>
       ) : (
         <Card className="p-0">
           <div className="flex items-center gap-2 border-b border-slate-200 px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:border-slate-700">
@@ -189,8 +196,8 @@ export default function OkrTree() {
             <span className="w-12 text-right">{t('진행률', 'Grade')}</span>
             <span className="w-28 text-center">{t('상태', 'Status')}</span>
           </div>
-          {(tree.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
-          {(tree.data ?? []).map((n) => <Node key={n.id} node={n} depth={0} codeOf={codeOf} />)}
+          {displayNodes.length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
+          {displayNodes.map((n) => <Node key={n.id} node={n} depth={0} codeOf={codeOf} />)}
         </Card>
       )}
 
