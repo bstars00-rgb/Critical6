@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Plus, ListTree, GanttChartSquare } from 'lucide-react';
+import { ChevronRight, Plus, ListTree, GanttChartSquare, Zap } from 'lucide-react';
 import { objectivesService, type ObjectiveNode } from '@/services/objectives';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
@@ -11,64 +11,83 @@ import { useT } from '@/i18n';
 import { cn } from '@/lib/cn';
 import type { ObjectiveLevel } from '@/types';
 
-function KrRow({ kr, depth }: { kr: any; depth: number }) {
-  const t = useT();
+type CodeOf = (id: string) => string;
+
+function TypeBadge({ kind, level }: { kind: 'obj' | 'kr' | 'ap'; level?: string }) {
+  if (kind === 'obj') {
+    const c = level === 'company' ? 'bg-indigo-600' : level === 'team' ? 'bg-brand-600' : 'bg-slate-500';
+    return <span className={`grid h-6 w-6 shrink-0 place-items-center rounded-md ${c} text-[11px] font-bold uppercase text-white`}>{(level ?? 'O')[0]}</span>;
+  }
+  if (kind === 'kr') return <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-orange-500 text-[9px] font-bold text-white">KR</span>;
+  return <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-violet-500 text-white"><Zap className="h-3.5 w-3.5" /></span>;
+}
+
+function Grade({ value }: { value: number }) {
+  const v = Math.round(value);
+  const c = v >= 70 ? 'text-emerald-600' : v >= 40 ? 'text-amber-600' : v > 0 ? 'text-red-500' : 'text-slate-400 dark:text-slate-500';
+  return <span className={`w-12 shrink-0 text-right text-sm font-semibold ${c}`}>{v}%</span>;
+}
+
+const apGrade = (a: any) => {
+  const cl = Array.isArray(a.checklist) ? a.checklist : [];
+  if (a.status === 'completed') return 100;
+  if (cl.length) return Math.round((cl.filter((c: any) => c?.done).length / cl.length) * 100);
+  return a.status === 'not_started' ? 0 : 30;
+};
+
+const rowCls = 'flex items-center gap-2 border-b border-slate-50 py-2 hover:bg-slate-50/60 dark:border-slate-800 dark:hover:bg-slate-800/40';
+
+function KrRow({ kr, depth, codeOf }: { kr: any; depth: number; codeOf: CodeOf }) {
   const [open, setOpen] = useState(false);
   const aps = kr.action_plans ?? [];
-  const doneAp = aps.filter((a: any) => a.status === 'completed').length;
   return (
     <div>
-      <div className="flex items-center gap-2 py-1 text-sm text-slate-600 dark:text-slate-300" style={{ paddingLeft: (depth + 1) * 18 + 22 }}>
+      <div className={rowCls} style={{ paddingLeft: depth * 22 + 30 }}>
         <button onClick={() => setOpen(!open)} className={aps.length ? '' : 'invisible'}>
           <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition ${open ? 'rotate-90' : ''}`} />
         </button>
-        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
-        <span className="flex-1 truncate">{kr.title}</span>
-        {aps.length > 0 && (
-          <span className="shrink-0 rounded bg-slate-100 px-1.5 text-[10px] text-slate-500 dark:bg-slate-700 dark:text-slate-300">
-            {t('실행', 'Exec')} {doneAp}/{aps.length}
-          </span>
-        )}
-        <span className="w-24 shrink-0 truncate text-right text-xs text-slate-400 dark:text-slate-500">{kr.current_value ?? 0}/{kr.target_value ?? '—'} {kr.unit ?? ''}</span>
-        <div className="w-24 shrink-0"><ProgressBar value={kr.progress} /></div>
-        <span className="w-9 shrink-0 text-right text-xs text-slate-400 dark:text-slate-500">{Math.round(kr.progress)}%</span>
+        <TypeBadge kind="kr" />
+        <span className="shrink-0 text-xs font-bold text-orange-500">{codeOf(kr.id)}</span>
+        <span className="flex-1 truncate text-sm text-slate-700 dark:text-slate-200">{kr.title}</span>
+        <span className="hidden shrink-0 text-[10px] text-slate-400 dark:text-slate-500 sm:inline">{kr.current_value ?? 0}/{kr.target_value ?? '—'} {kr.unit ?? ''}</span>
+        <Grade value={kr.progress} />
+        <div className="flex w-28 shrink-0 justify-center"><StatusBadge status={kr.status} /></div>
       </div>
       {open && aps.map((a: any) => (
-        <div key={a.id} className="flex items-center gap-2 py-0.5 text-xs text-slate-500 dark:text-slate-400" style={{ paddingLeft: (depth + 1) * 18 + 48 }}>
-          <span className="text-slate-300 dark:text-slate-600">↳</span>
-          <span className="flex-1 truncate">{a.title}</span>
-          {a.due_date && <span className="text-[10px] text-slate-400">{a.due_date}</span>}
-          <StatusBadge status={a.status} />
+        <div key={a.id} className={rowCls} style={{ paddingLeft: (depth + 1) * 22 + 30 }}>
+          <span className="w-3.5 shrink-0" />
+          <TypeBadge kind="ap" />
+          <span className="shrink-0 text-xs font-bold text-violet-500">{codeOf(a.id)}</span>
+          <span className="flex-1 truncate text-sm text-slate-500 dark:text-slate-400">{a.title}</span>
+          <Grade value={apGrade(a)} />
+          <div className="flex w-28 shrink-0 justify-center"><StatusBadge status={a.status} /></div>
         </div>
       ))}
     </div>
   );
 }
 
-function Node({ node, depth }: { node: ObjectiveNode; depth: number }) {
+function Node({ node, depth, codeOf }: { node: ObjectiveNode; depth: number; codeOf: CodeOf }) {
   const [open, setOpen] = useState(true);
   const hasChildren = node.children.length > 0 || node.key_results.length > 0;
   return (
     <div>
-      <div className="flex items-center gap-2 rounded-lg px-2 py-2 hover:bg-slate-50 dark:hover:bg-slate-800"
-        style={{ paddingLeft: depth * 18 + 8 }}>
+      <div className={rowCls} style={{ paddingLeft: depth * 22 + 8 }}>
         <button onClick={() => setOpen(!open)} className={hasChildren ? '' : 'invisible'}>
           <ChevronRight className={`h-4 w-4 text-slate-400 dark:text-slate-500 transition ${open ? 'rotate-90' : ''}`} />
         </button>
-        <span className="rounded bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 text-[10px] font-medium uppercase text-slate-500 dark:text-slate-400">
-          {node.level}
-        </span>
-        <Link to={`/okr/${node.id}`} className="flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-700 dark:hover:text-brand-300">
+        <TypeBadge kind="obj" level={node.level} />
+        <span className="shrink-0 text-xs font-bold text-brand-600 dark:text-brand-300">{codeOf(node.id)}</span>
+        <Link to={`/okr/${node.id}`} className="flex-1 truncate text-sm font-semibold text-slate-800 dark:text-slate-100 hover:text-brand-700 dark:hover:text-brand-300">
           {node.title}
         </Link>
-        <StatusBadge status={node.status} />
-        <div className="w-28"><ProgressBar value={node.progress} /></div>
-        <span className="w-10 text-right text-xs text-slate-500 dark:text-slate-400">{Math.round(node.progress)}%</span>
+        <Grade value={node.progress} />
+        <div className="flex w-28 shrink-0 justify-center"><StatusBadge status={node.status} /></div>
       </div>
       {open && (
         <div>
-          {node.key_results.map((kr) => <KrRow key={kr.id} kr={kr} depth={depth} />)}
-          {node.children.map((c) => <Node key={c.id} node={c} depth={depth + 1} />)}
+          {node.key_results.map((kr) => <KrRow key={kr.id} kr={kr} depth={depth + 1} codeOf={codeOf} />)}
+          {node.children.map((c) => <Node key={c.id} node={c} depth={depth + 1} codeOf={codeOf} />)}
         </div>
       )}
     </div>
@@ -104,6 +123,24 @@ export default function OkrTree() {
     },
   });
 
+  // Stable display codes (O-1, KR-1, A-1) in render order.
+  const codeMap = useMemo(() => {
+    const m = new Map<string, string>(); const c = { o: 0, kr: 0, ap: 0 };
+    const walk = (nodes: ObjectiveNode[]) => {
+      for (const o of nodes) {
+        m.set(o.id, `O-${++c.o}`);
+        for (const kr of o.key_results as any[]) {
+          m.set(kr.id, `KR-${++c.kr}`);
+          for (const ap of (kr.action_plans ?? [])) m.set(ap.id, `A-${++c.ap}`);
+        }
+        walk(o.children);
+      }
+    };
+    walk(tree.data ?? []);
+    return m;
+  }, [tree.data]);
+  const codeOf: CodeOf = (id) => codeMap.get(id) ?? '';
+
   return (
     <>
       <PageHeader title={t('OKR 트리', 'OKR Tree')} subtitle={t('Company → Team → Personal 정렬', 'Company → Team → Personal alignment')}
@@ -137,9 +174,14 @@ export default function OkrTree() {
       ) : view === 'timeline' ? (
         <Card className="p-2"><OkrTimeline nodes={tree.data ?? []} year={year} /></Card>
       ) : (
-        <Card className="p-2">
+        <Card className="p-0">
+          <div className="flex items-center gap-2 border-b border-slate-200 px-2 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:border-slate-700">
+            <span className="flex-1 pl-8">{t('목표 및 핵심 결과', 'Objectives & Key Results')}</span>
+            <span className="w-12 text-right">{t('진행률', 'Grade')}</span>
+            <span className="w-28 text-center">{t('상태', 'Status')}</span>
+          </div>
           {(tree.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
-          {(tree.data ?? []).map((n) => <Node key={n.id} node={n} depth={0} />)}
+          {(tree.data ?? []).map((n) => <Node key={n.id} node={n} depth={0} codeOf={codeOf} />)}
         </Card>
       )}
 

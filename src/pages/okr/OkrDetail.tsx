@@ -15,6 +15,42 @@ import { useLang, useT } from '@/i18n';
 
 const emptyKr = { title: '', target_value: '', current_value: '', unit: '', status: 'not_started', priority: 'medium' };
 
+// Viva-Goals-style predicted progress: linear from start_date → due_date.
+function predictedPct(start: string | null, due: string | null): number | null {
+  if (!start || !due) return null;
+  const s = Date.parse(start), d = Date.parse(due), now = Date.now();
+  if (isNaN(s) || isNaN(d) || d <= s) return null;
+  if (now <= s) return 0;
+  if (now >= d) return 100;
+  return Math.round(((now - s) / (d - s)) * 100);
+}
+
+function ProgressHero({ actual, predicted, statusEl }: { actual: number; predicted: number | null; statusEl: React.ReactNode }) {
+  const a = Math.round(actual);
+  const pacing = predicted == null ? null
+    : a >= predicted ? { ko: '정상', en: 'On track', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' }
+      : a >= predicted - 10 ? { ko: '주의', en: 'At risk', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' }
+        : { ko: '지연', en: 'Behind', cls: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300' };
+  return (
+    <div className="card flex items-center gap-5 p-5">
+      <div className="text-5xl font-extrabold tabular-nums text-slate-900 dark:text-slate-100">{a}<span className="text-2xl">%</span></div>
+      <div className="flex-1">
+        <div className="relative h-2.5 rounded-full bg-gradient-to-r from-red-400 via-amber-400 to-emerald-400">
+          {predicted != null && (
+            <div className="absolute top-1/2 h-5 w-0.5 -translate-y-1/2 bg-slate-600 dark:bg-slate-200" style={{ left: `${predicted}%` }} title={`예상 ${predicted}%`} />
+          )}
+          <div className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-slate-800 shadow dark:border-slate-900 dark:bg-white" style={{ left: `${Math.min(100, Math.max(0, a))}%` }} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          {statusEl}
+          {pacing && <span className={`rounded-full px-2 py-0.5 font-medium ${pacing.cls}`}>{pacing.ko} / {pacing.en}</span>}
+          {predicted != null && <span className="text-slate-400 dark:text-slate-500">예상 {predicted}% · Predicted</span>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OkrDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
@@ -98,13 +134,8 @@ export default function OkrDetail() {
           </div>
         } />
 
-      <div className="grid grid-cols-3 gap-3">
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('진행률', 'Progress')}</div>
-          <div className="mt-1 text-2xl font-bold">{Math.round(o.progress)}%</div>
-          <ProgressBar value={o.progress} className="mt-2" /></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('상태', 'Status')}</div><div className="mt-2"><StatusBadge status={o.status} /></div></Card>
-        <Card><div className="text-xs text-slate-500 dark:text-slate-400">{t('우선순위', 'Priority')}</div><div className="mt-2"><PriorityBadge priority={o.priority} /></div></Card>
-      </div>
+      <ProgressHero actual={o.progress} predicted={predictedPct(o.start_date, o.due_date)}
+        statusEl={<><StatusBadge status={o.status} /><PriorityBadge priority={o.priority} /></>} />
 
       {ai && <div className="mt-4"><AiResultCard result={ai} title="OKR Quality Check" /></div>}
 
@@ -118,6 +149,7 @@ export default function OkrDetail() {
           {d.keyResults.map((kr: any) => (
             <div key={kr.id} className="rounded-lg border border-slate-100 dark:border-slate-700 p-3">
               <div className="flex items-center gap-2">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-orange-500 text-[9px] font-bold text-white">KR</span>
                 <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200">{kr.title}</span>
                 <select className="rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs"
                   value={kr.status}
