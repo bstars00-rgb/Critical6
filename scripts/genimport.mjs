@@ -121,7 +121,7 @@ for (const r of rows(OKR_F)) {
   const b = clean(r[COL.bucket]);
   if (!/Team OKR|경영지원/.test(b)) continue;
   const code = teamCode(r[COL.name]);
-  if (!code) continue;
+  if (code !== 'GST') continue;   // our team only — skip other teams' OKR
   const teamExpr = ensureTeam(code);
   ensureMember(teamExpr);
   const isGst = code === 'GST';
