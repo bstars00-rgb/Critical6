@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Sparkles, ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Sparkles, ArrowLeft, Pencil, Trash2, CalendarRange } from 'lucide-react';
 import { objectivesService } from '@/services/objectives';
 import { keyResultsService } from '@/services/keyResults';
 import { aiService, type AiResult } from '@/ai/aiService';
@@ -9,6 +9,7 @@ import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, PriorityBadge, ProgressBar, Modal, Field } from '@/components/ui';
 import { AiResultCard } from '@/components/AiResultCard';
+import { KrQuarterEditor } from '@/components/KrQuarterEditor';
 import { OKR_STATUSES, PRIORITIES, statusLabel, priorityLabel } from '@/lib/constants';
 import { useLang, useT } from '@/i18n';
 
@@ -26,6 +27,7 @@ export default function OkrDetail() {
   const [krForm, setKrForm] = useState(emptyKr);
   const [objModal, setObjModal] = useState(false);
   const [objForm, setObjForm] = useState({ title: '', description: '', status: 'not_started', priority: 'medium', due_date: '', memo: '' });
+  const [qOpen, setQOpen] = useState<Record<string, boolean>>({});
   const [ai, setAi] = useState<AiResult | null>(null);
 
   const data = useQuery({ queryKey: ['okr', id], queryFn: () => objectivesService.withRelations(id!) });
@@ -122,6 +124,8 @@ export default function OkrDetail() {
                   onChange={(e) => keyResultsService.update(kr.id, { status: e.target.value as any }).then(invalidate)}>
                   {OKR_STATUSES.map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}
                 </select>
+                <button title={t('분기별 입력', 'Quarterly')} onClick={() => setQOpen((q) => ({ ...q, [kr.id]: !q[kr.id] }))}
+                  className={qOpen[kr.id] ? 'text-brand-600' : 'text-slate-300 hover:text-brand-600 dark:text-slate-600'}><CalendarRange className="h-4 w-4" /></button>
                 <button title={t('수정', 'Edit')} onClick={() => openKrEdit(kr)} className="text-slate-300 hover:text-brand-600 dark:text-slate-600"><Pencil className="h-4 w-4" /></button>
                 <button title={t('삭제', 'Delete')} onClick={() => onDeleteKr(kr)} className="text-slate-300 hover:text-red-500 dark:text-slate-600"><Trash2 className="h-4 w-4" /></button>
               </div>
@@ -137,6 +141,7 @@ export default function OkrDetail() {
                 <div className="ml-auto w-28 shrink-0"><ProgressBar value={kr.progress} /></div>
                 <span className="w-10 shrink-0 text-right text-xs text-slate-500 dark:text-slate-400">{Math.round(kr.progress)}%</span>
               </div>
+              {qOpen[kr.id] && <KrQuarterEditor krId={kr.id} year={o.year ?? new Date().getFullYear()} />}
             </div>
           ))}
         </div>
