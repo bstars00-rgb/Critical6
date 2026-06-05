@@ -38,6 +38,7 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.4",
     "vite": "^5.4.6",
-    "vitest": "^2.1.9"
+    "vitest": "^2.1.9",
+    "xlsx": "^0.18.5"
   }
 }

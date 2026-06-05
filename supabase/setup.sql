@@ -1,9 +1,8 @@
 -- AI Execution OS — production setup (run once in Supabase SQL editor).
--- Concatenation of migrations 0001–0007. Does NOT include demo seed.
--- After running, sign up in the app — the first account becomes admin.
+-- Migrations 0001–0008. No demo seed.
 
 
--- ==================== supabase/migrations/0001_enums.sql ====================
+-- ==== supabase/migrations/0001_enums.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0001_enums.sql
@@ -83,7 +82,7 @@ create type notification_type as enum (
   'followup', 'ai_alert', 'recognition', 'sync_failed'
 );
 
--- ==================== supabase/migrations/0002_tables.sql ====================
+-- ==== supabase/migrations/0002_tables.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0002_tables.sql
@@ -590,7 +589,7 @@ create index idx_ai_insights_target     on ai_insights (related_type, related_id
 create index idx_activity_entity        on activity_logs (entity_type, entity_id);
 create index idx_notifications_user     on notifications (user_id, is_read);
 
--- ==================== supabase/migrations/0003_functions_triggers.sql ====================
+-- ==== supabase/migrations/0003_functions_triggers.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0003_functions_triggers.sql
@@ -800,7 +799,7 @@ create trigger trg_c6_guard after insert on critical_six
 create trigger trg_cfr_validate before insert or update on cfr_checkins
   for each row execute function fn_validate_cfr_target();
 
--- ==================== supabase/migrations/0004_rls.sql ====================
+-- ==== supabase/migrations/0004_rls.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0004_rls.sql
@@ -1075,7 +1074,7 @@ create policy notif_select on notifications for select using (user_id = auth.uid
 create policy notif_update on notifications for update using (user_id = auth.uid());
 create policy notif_admin on notifications for all using (fn_is_admin()) with check (true);
 
--- ==================== supabase/migrations/0005_views.sql ====================
+-- ==== supabase/migrations/0005_views.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0005_views.sql
@@ -1145,7 +1144,7 @@ from crm_accounts a
 left join crm_opportunities o on o.account_id = a.id and o.stage not in ('lost','on_hold')
 group by a.account_owner_id;
 
--- ==================== supabase/migrations/0006_auth_profile.sql ====================
+-- ==== supabase/migrations/0006_auth_profile.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0006_auth_profile.sql
@@ -1183,7 +1182,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- ==================== supabase/migrations/0007_fix_rls_recursion.sql ====================
+-- ==== supabase/migrations/0007_fix_rls_recursion.sql ====
 
 -- =============================================================================
 -- AI Execution OS — 0007_fix_rls_recursion.sql
@@ -1228,3 +1227,56 @@ create policy apa_upd on action_plan_assignees for update using (
 create policy apa_del on action_plan_assignees for delete using (
   fn_is_admin() or exists (select 1 from action_plans p where p.id = action_plan_id
     and (p.owner_id = auth.uid() or (p.team_id is not null and fn_is_team_leader(p.team_id)))));
+
+-- ==== supabase/migrations/0008_planner_import.sql ====
+
+-- =============================================================================
+-- AI Execution OS — 0008_planner_import.sql
+-- Schema enhancements to import Microsoft Teams Planner exports (OKR / Action
+-- Plan / Critical 6) and to represent team members who have NOT signed up yet.
+-- =============================================================================
+
+-- People roster: a team member known by name/email who may not (yet) have an
+-- AEO login. `user_id` links to the auth-backed users row once they sign up.
+create table if not exists people (
+  id              uuid primary key default gen_random_uuid(),
+  full_name       text not null,
+  email           text unique,
+  planner_user_id text unique,
+  team_id         uuid references teams (id) on delete set null,
+  user_id         uuid references users (id) on delete set null,
+  is_active       boolean not null default true,
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  created_by      uuid references users (id),
+  updated_by      uuid references users (id)
+);
+alter table people enable row level security;
+drop policy if exists people_select on people;
+drop policy if exists people_admin on people;
+create policy people_select on people for select using (true);
+create policy people_admin  on people for all using (fn_is_admin()) with check (fn_is_admin());
+
+-- Traceability + idempotent re-import from external tools.
+alter table objectives   add column if not exists external_id text;
+alter table objectives   add column if not exists external_source text;
+alter table key_results  add column if not exists external_id text;
+alter table key_results  add column if not exists external_source text;
+alter table critical_six add column if not exists external_id text;
+alter table critical_six add column if not exists external_source text;
+alter table action_plans add column if not exists external_source text;  -- already has external_id
+
+-- Preserve Planner assignee display names (people may not be auth users yet).
+alter table action_plans add column if not exists external_assignees text[] not null default '{}';
+alter table critical_six add column if not exists external_assignees text[] not null default '{}';
+
+-- Imported Critical 6 history may have no AEO owner.
+alter table critical_six alter column owner_id drop not null;
+
+-- Wire the standard triggers onto people.
+drop trigger if exists trg_touch_people on people;
+drop trigger if exists trg_audit_people on people;
+create trigger trg_touch_people before update on people
+  for each row execute function fn_touch_updated_at();
+create trigger trg_audit_people after insert or update or delete on people
+  for each row execute function fn_log_activity();
