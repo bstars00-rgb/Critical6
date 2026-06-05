@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, Plus, ListTree, GanttChartSquare } from 'lucide-react';
 import { objectivesService, type ObjectiveNode } from '@/services/objectives';
 import { useAuthStore } from '@/stores/auth';
 import { PageHeader } from '@/layouts/AppLayout';
 import { Card, Spinner, StatusBadge, ProgressBar, Modal, Field } from '@/components/ui';
+import { OkrTimeline } from '@/components/OkrTimeline';
 import { useT } from '@/i18n';
+import { cn } from '@/lib/cn';
 import type { ObjectiveLevel } from '@/types';
 
 function KrRow({ kr, depth }: { kr: any; depth: number }) {
@@ -78,6 +80,8 @@ export default function OkrTree() {
   const t = useT();
   const profile = useAuthStore((s) => s.profile);
   const [modal, setModal] = useState(false);
+  const [view, setView] = useState<'tree' | 'timeline'>('tree');
+  const [year, setYear] = useState(new Date().getFullYear());
   const tree = useQuery({ queryKey: ['okr', 'tree'], queryFn: () => objectivesService.tree() });
   const flat = useQuery({ queryKey: ['okr', 'flat'], queryFn: () => objectivesService.list() });
 
@@ -103,12 +107,35 @@ export default function OkrTree() {
   return (
     <>
       <PageHeader title={t('OKR 트리', 'OKR Tree')} subtitle={t('Company → Team → Personal 정렬', 'Company → Team → Personal alignment')}
-        action={<button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />Objective</button>} />
+        action={
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-200 p-0.5 dark:border-slate-700">
+              <button onClick={() => setView('tree')} title={t('트리', 'Tree')}
+                className={cn('flex items-center gap-1 rounded-md px-2 py-1 text-xs', view === 'tree' ? 'bg-brand-600 text-white' : 'text-slate-500')}>
+                <ListTree className="h-4 w-4" />{t('트리', 'Tree')}</button>
+              <button onClick={() => setView('timeline')} title={t('타임라인', 'Timeline')}
+                className={cn('flex items-center gap-1 rounded-md px-2 py-1 text-xs', view === 'timeline' ? 'bg-brand-600 text-white' : 'text-slate-500')}>
+                <GanttChartSquare className="h-4 w-4" />{t('타임라인', 'Timeline')}</button>
+            </div>
+            <button className="btn-primary" onClick={() => setModal(true)}><Plus className="h-4 w-4" />Objective</button>
+          </div>
+        } />
+
+      {view === 'timeline' && (
+        <div className="mb-3 flex items-center gap-2 text-sm">
+          <button className="btn-ghost px-2 py-1" onClick={() => setYear((y) => y - 1)}>◀</button>
+          <span className="font-semibold">{year}</span>
+          <button className="btn-ghost px-2 py-1" onClick={() => setYear((y) => y + 1)}>▶</button>
+          <span className="ml-2 text-xs text-slate-400">{t('막대 = 시작일~기한 · 빨간선 = 오늘', 'Bars = start→due · red line = today')}</span>
+        </div>
+      )}
 
       {tree.isLoading ? <Spinner /> : tree.isError ? (
         <Card className="p-6 text-center text-sm text-red-500">
           {t('불러오지 못했습니다', 'Failed to load')}: {String((tree.error as any)?.message ?? '')}
         </Card>
+      ) : view === 'timeline' ? (
+        <Card className="p-2"><OkrTimeline nodes={tree.data ?? []} year={year} /></Card>
       ) : (
         <Card className="p-2">
           {(tree.data ?? []).length === 0 && <div className="p-6 text-center text-sm text-slate-400 dark:text-slate-500">{t('Objective가 없습니다. 우측 상단에서 추가하세요.', 'No objectives yet. Add one from the top right.')}</div>}
