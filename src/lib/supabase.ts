@@ -1,8 +1,14 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createMockClient } from './demo/mockClient';
 
-const url = import.meta.env.VITE_SUPABASE_URL as string;
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+// Tolerate common paste mistakes: trailing slashes or a `/rest/v1` (the "Data
+// API URL") / `/auth/v1` suffix. supabase-js needs the BARE project URL.
+const rawUrl = ((import.meta.env.VITE_SUPABASE_URL as string) ?? '').trim();
+const url = rawUrl
+  .replace(/\/+$/, '')
+  .replace(/\/(rest|auth|storage|realtime)\/v\d+$/, '')
+  .replace(/\/+$/, '');
+const anonKey = ((import.meta.env.VITE_SUPABASE_ANON_KEY as string) ?? '').trim();
 
 // Demo mode: explicit flag, or whenever no real backend is configured (e.g. the
 // GitHub Pages build). Falls back to an in-memory mock client so the whole
